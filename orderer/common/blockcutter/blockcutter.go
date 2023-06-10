@@ -74,11 +74,24 @@ func NewReceiverImpl(channelID string, sharedConfigFetcher OrdererConfigFetcher,
 //
 // Note that messageBatches can not be greater than 2.
 func (r *receiver) Ordered(msg *cb.Envelope) (messageBatches [][]*cb.Envelope, pending bool) {
-	logger.Info("================================================================>>> BlockCutter.Ordered!!!")
+
+	logger.Info("=============================================================>>> BlockCutter.Ordered Received txRWSet!!!")
 	resppayload, _ := utils.GetActionFromEnvelopeMsg(msg)
 	txRWSet := &rwsetutil.TxRwSet{}
 	_ = txRWSet.FromProtoBytes(resppayload.Results)
-	logger.Infof("Received message>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n %+v", txRWSet)
+	ns := txRWSet.NsRwSets[1]
+
+	for _, read := range ns.KvRwSet.Reads {
+		if read.GetVersion() == nil {
+			logger.Infof("Read Key: %s, Version: nil", read.GetKey())
+		} else {
+			logger.Infof("Read Key: %s, Version: (%d, %d)", read.GetKey(), read.GetVersion().GetBlockNum(), read.GetVersion().GetTxNum())
+		}
+	}
+	for _, write := range ns.KvRwSet.Writes {
+		logger.Infof("Write Key: %s, Value: %s", write.GetKey(), string(write.GetValue()))
+	}
+	logger.Infof("=============================================================>>> End of txRWSet!!!")
 
 	if len(r.pendingBatch) == 0 {
 		// We are beginning a new batch, mark the time

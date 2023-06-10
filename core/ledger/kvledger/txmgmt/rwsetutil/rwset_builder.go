@@ -130,6 +130,7 @@ func (b *RWSetBuilder) AddToHashedMetadataWriteSet(ns, coll, key string, metadat
 // GetTxSimulationResults returns the proto bytes of public rwset
 // (public data + hashes of private data) and the private rwset for the transaction
 func (b *RWSetBuilder) GetTxSimulationResults() (*ledger.TxSimulationResults, error) {
+	logger.Info("========================================================>>> 1.4 GetTxSimulationResults!!!")
 	pvtData := b.getTxPvtReadWriteSet()
 	var err error
 
@@ -150,6 +151,20 @@ func (b *RWSetBuilder) GetTxSimulationResults() (*ledger.TxSimulationResults, er
 	// Compute the proto bytes for pub rwset
 	pubSet := b.GetTxReadWriteSet()
 	if pubSet != nil {
+
+		// for _, ns := range pubSet.NsRwSets {
+		// 	for _, read := range ns.KvRwSet.Reads {
+		// 		if read.GetVersion() == nil {
+		// 			logger.Infof("Read Key: %s, Version: nil", read.GetKey())
+		// 		} else {
+		// 			logger.Infof("Read Key: %s, Version: (%d, %d)", read.GetKey(), read.GetVersion().GetBlockNum(), read.GetVersion().GetTxNum())
+		// 		}
+		// 	}
+		// 	for _, write := range ns.KvRwSet.Writes {
+		// 		logger.Infof("Write Key: %s", write.GetKey())
+		// 	}
+		// }
+
 		if pubDataProto, err = pubSet.toProtoMsg(); err != nil {
 			return nil, err
 		}

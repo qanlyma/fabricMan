@@ -591,7 +591,7 @@ func (l *kvLedger) NewHistoryQueryExecutor() (ledger.HistoryQueryExecutor, error
 // After the block is committed, it sends a commitDone event.
 // Refer to processEvents function to understand how the channels and events work together to handle synchronization.
 func (l *kvLedger) CommitLegacy(pvtdataAndBlock *ledger.BlockAndPvtData, commitOpts *ledger.CommitOptions) error {
-	logger.Info("================================================================>>> 3.3 CommitLegacy!!!")
+	logger.Info("===================================================================>>> 3.3 CommitLegacy!!!")
 
 	blockNumber := pvtdataAndBlock.Block.Header.Number
 	l.snapshotMgr.events <- &event{commitStart, blockNumber}
@@ -694,7 +694,7 @@ func (l *kvLedger) commit(pvtdataAndBlock *ledger.BlockAndPvtData, commitOpts *l
 }
 
 func (l *kvLedger) commitToPvtAndBlockStore(blockAndPvtdata *ledger.BlockAndPvtData) error {
-	logger.Info("================================================================>>> 4.1 commitToPvtAndBlockStore!!!")
+	logger.Info("=======================================================>>> 4.1 commitToPvtAndBlockStore!!!")
 
 	pvtdataStoreHt, err := l.pvtdataStore.LastCommittedBlockHeight()
 	if err != nil {

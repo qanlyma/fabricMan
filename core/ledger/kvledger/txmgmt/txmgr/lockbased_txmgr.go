@@ -485,7 +485,7 @@ func (txmgr *LockBasedTxMgr) Shutdown() {
 
 // Commit implements method in interface `txmgmt.TxMgr`
 func (txmgr *LockBasedTxMgr) Commit() error {
-	logger.Info("================================================================>>> 4.2 Commit!!!")
+	logger.Info("===================================================================>>> 4.2 Commit!!!")
 
 	// we need to acquire a lock on oldBlockCommit. The following are the two reasons:
 	// (1) the DeleteExpiredAndUpdateBookkeeping() would perform incorrect operation if
