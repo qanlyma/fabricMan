@@ -527,7 +527,7 @@ func (c *Chain) Consensus(req *orderer.ConsensusRequest, sender uint64) error {
 // - the actual leader via the transport mechanism
 // The call fails if there's no leader elected yet.
 func (c *Chain) Submit(req *orderer.SubmitRequest, sender uint64) error {
-	c.logger.Info("==============================================================>>> 2.4 Submit!!!")
+	c.logger.Info("=======================================================================>>> 2.4 Submit!!!")
 
 	if err := c.isRunning(); err != nil {
 		c.Metrics.ProposalFailures.Add(1)
@@ -893,7 +893,7 @@ func (c *Chain) writeBlock(block *common.Block, index uint64) {
 //
 // It takes care of config messages as well as the revalidation of messages if the config sequence has advanced.
 func (c *Chain) ordered(msg *orderer.SubmitRequest) (batches [][]*common.Envelope, pending bool, err error) {
-	c.logger.Info("=============================================================>>> 2.5 ordered!!!")
+	c.logger.Info("======================================================================>>> 2.5 ordered!!!")
 
 	seq := c.support.Sequence()
 

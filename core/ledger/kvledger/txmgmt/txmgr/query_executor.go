@@ -74,7 +74,7 @@ func (q *queryExecutor) getState(ns, key string) ([]byte, []byte, error) {
 	}
 	val, metadata, ver := decomposeVersionedValue(versionedValue)
 	if q.collectReadset {
-		q.rwsetBuilder.AddToReadSet(ns, key, ver)
+		q.rwsetBuilder.AddToReadSet(ns, key, ver, val)
 	}
 	return val, metadata, nil
 }
@@ -111,7 +111,7 @@ func (q *queryExecutor) GetStateMultipleKeys(ns string, keys []string) ([][]byte
 	for i, versionedValue := range versionedValues {
 		val, _, ver := decomposeVersionedValue(versionedValue)
 		if q.collectReadset {
-			q.rwsetBuilder.AddToReadSet(ns, keys[i], ver)
+			q.rwsetBuilder.AddToReadSet(ns, keys[i], ver, val)
 		}
 		values[i] = val
 	}
@@ -464,10 +464,10 @@ func (itr *resultsItr) GetBookmarkAndClose() string {
 }
 
 // updateRangeQueryInfo updates two attributes of the rangeQueryInfo
-// 1) The EndKey - set to either a) latest key that is to be returned to the caller (if the iterator is not exhausted)
-//                                  because, we do not know if the caller is again going to invoke Next() or not.
-//                            or b) the last key that was supplied in the original query (if the iterator is exhausted)
-// 2) The ItrExhausted - set to true if the iterator is going to return nil as a result of the Next() call
+//  1. The EndKey - set to either a) latest key that is to be returned to the caller (if the iterator is not exhausted)
+//     because, we do not know if the caller is again going to invoke Next() or not.
+//     or b) the last key that was supplied in the original query (if the iterator is exhausted)
+//  2. The ItrExhausted - set to true if the iterator is going to return nil as a result of the Next() call
 func (itr *resultsItr) updateRangeQueryInfo(queryResult *statedb.VersionedKV) error {
 	if itr.rwSetBuilder == nil {
 		return nil
@@ -481,7 +481,7 @@ func (itr *resultsItr) updateRangeQueryInfo(queryResult *statedb.VersionedKV) er
 		return nil
 	}
 
-	if err := itr.rangeQueryResultsHelper.AddResult(rwsetutil.NewKVRead(queryResult.Key, queryResult.Version)); err != nil {
+	if err := itr.rangeQueryResultsHelper.AddResult(rwsetutil.NewKVRead(queryResult.Key, queryResult.Version, queryResult.Value)); err != nil {
 		return err
 	}
 	// Set the end key to the latest key retrieved by the caller.
@@ -512,7 +512,7 @@ func (itr *queryResultsItr) Next() (commonledger.QueryResult, error) {
 	logger.Debugf("queryResultsItr.Next() returned a record:%s", string(queryResult.Value))
 
 	if itr.RWSetBuilder != nil {
-		itr.RWSetBuilder.AddToReadSet(queryResult.Namespace, queryResult.Key, queryResult.Version)
+		itr.RWSetBuilder.AddToReadSet(queryResult.Namespace, queryResult.Key, queryResult.Version, queryResult.Value)
 	}
 	return &queryresult.KV{
 		Namespace: queryResult.Namespace,

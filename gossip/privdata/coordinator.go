@@ -150,7 +150,7 @@ func NewCoordinator(mspID string, support Support, store *transientstore.Store, 
 
 // StoreBlock stores block with private data into the ledger
 func (c *coordinator) StoreBlock(block *common.Block, privateDataSets util.PvtDataCollections) error {
-	c.logger.Info("==============================================================>>> 3.1 StoreBlock!!!")
+	c.logger.Info("=======================================================================>>> 3.1 StoreBlock!!!")
 
 	if block.Data == nil {
 		return errors.New("Block data is empty")

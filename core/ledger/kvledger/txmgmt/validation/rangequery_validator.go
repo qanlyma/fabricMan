@@ -119,7 +119,7 @@ func (v *rangeQueryHashValidator) validate() (bool, error) {
 			return equals, nil
 		}
 
-		if err := v.resultsHelper.AddResult(rwsetutil.NewKVRead(result.Key, result.Version)); err != nil {
+		if err := v.resultsHelper.AddResult(rwsetutil.NewKVRead(result.Key, result.Version, result.Value)); err != nil {
 			return false, err
 		}
 		merkle := v.resultsHelper.GetMerkleSummary()

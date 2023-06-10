@@ -112,7 +112,7 @@ func (e *Endorser) callChaincode(txParams *ccprovider.TransactionParams, input *
 		logger.Infof("finished chaincode: %s duration: %dms", chaincodeName, elapsedMillisec)
 	}(time.Now())
 
-	endorserLogger.Info("==================================================================>>> 1.3 callChaincode!!!")
+	endorserLogger.Info("===========================================================================>>> 1.3 callChaincode!!!")
 
 	meterLabels := []string{
 		"channel", txParams.ChannelID,
@@ -178,7 +178,7 @@ func (e *Endorser) callChaincode(txParams *ccprovider.TransactionParams, input *
 
 // SimulateProposal simulates the proposal by calling the chaincode
 func (e *Endorser) simulateProposal(txParams *ccprovider.TransactionParams, chaincodeName string, chaincodeInput *pb.ChaincodeInput) (*pb.Response, []byte, *pb.ChaincodeEvent, *pb.ChaincodeInterest, error) {
-	endorserLogger.Info("===============================================================>>> 1.2 simulateProposal!!!")
+	endorserLogger.Info("========================================================================>>> 1.2 simulateProposal!!!")
 	logger := decorateLogger(endorserLogger, txParams)
 
 	meterLabels := []string{
@@ -305,7 +305,7 @@ func (e *Endorser) preProcess(up *UnpackedProposal, channel *Channel) error {
 // Errors related to proposal processing (either infrastructure errors or chaincode errors) are returned with a nil error,
 // clients are expected to look at the ProposalResponse response status code (e.g. 500) and message.
 func (e *Endorser) ProcessProposal(ctx context.Context, signedProp *pb.SignedProposal) (*pb.ProposalResponse, error) {
-	endorserLogger.Info("================================================================>>> 1.1 ProcessProposal!!!")
+	endorserLogger.Info("=========================================================================>>> 1.1 ProcessProposal!!!")
 	// start time for computing elapsed time metric for successfully endorsed proposals
 	startTime := time.Now()
 	e.Metrics.ProposalsReceived.Add(1)

@@ -325,8 +325,8 @@ func collPvtRwSetFromProtoMsg(protoMsg *rwset.CollectionPvtReadWriteSet) (*CollP
 }
 
 // NewKVRead helps constructing proto message kvrwset.KVRead
-func NewKVRead(key string, version *version.Height) *kvrwset.KVRead {
-	return &kvrwset.KVRead{Key: key, Version: newProtoVersion(version)}
+func NewKVRead(key string, version *version.Height, val []byte) *kvrwset.KVRead {
+	return &kvrwset.KVRead{Key: key, Version: newProtoVersion(version), Value: val}
 }
 
 // NewVersion helps converting proto message kvrwset.Version to version.Height

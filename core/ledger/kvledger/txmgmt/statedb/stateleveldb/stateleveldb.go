@@ -183,7 +183,7 @@ func (vdb *versionedDB) ExecuteQueryWithPagination(namespace, query, bookmark st
 
 // ApplyUpdates implements method in VersionedDB interface
 func (vdb *versionedDB) ApplyUpdates(batch *statedb.UpdateBatch, height *version.Height) error {
-	logger.Info("===============================================================>>> 4.3 ApplyUpdates!!!")
+	logger.Info("========================================================================>>> 4.3 ApplyUpdates!!!")
 
 	dbBatch := vdb.db.NewUpdateBatch()
 	namespaces := batch.GetUpdatedNamespaces()
