@@ -12,6 +12,8 @@ import (
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/common/channelconfig"
 	"github.com/hyperledger/fabric/common/flogging"
+	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/rwsetutil"
+	utils "github.com/hyperledger/fabric/protoutil"
 )
 
 var logger = flogging.MustGetLogger("orderer.common.blockcutter")
@@ -54,19 +56,30 @@ func NewReceiverImpl(channelID string, sharedConfigFetcher OrdererConfigFetcher,
 //
 // messageBatches length: 0, pending: false
 //   - impossible, as we have just received a message
+//
 // messageBatches length: 0, pending: true
 //   - no batch is cut and there are messages pending
+//
 // messageBatches length: 1, pending: false
 //   - the message count reaches BatchSize.MaxMessageCount
+//
 // messageBatches length: 1, pending: true
 //   - the current message will cause the pending batch size in bytes to exceed BatchSize.PreferredMaxBytes.
+//
 // messageBatches length: 2, pending: false
 //   - the current message size in bytes exceeds BatchSize.PreferredMaxBytes, therefore isolated in its own batch.
+//
 // messageBatches length: 2, pending: true
 //   - impossible
 //
 // Note that messageBatches can not be greater than 2.
 func (r *receiver) Ordered(msg *cb.Envelope) (messageBatches [][]*cb.Envelope, pending bool) {
+	logger.Info("================================================================>>> BlockCutter.Ordered!!!")
+	resppayload, _ := utils.GetActionFromEnvelopeMsg(msg)
+	txRWSet := &rwsetutil.TxRwSet{}
+	_ = txRWSet.FromProtoBytes(resppayload.Results)
+	logger.Infof("Received message>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n %+v", txRWSet)
+
 	if len(r.pendingBatch) == 0 {
 		// We are beginning a new batch, mark the time
 		r.PendingBatchStartTime = time.Now()

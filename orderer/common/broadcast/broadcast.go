@@ -136,7 +136,6 @@ func (mt *MetricsTracker) BeginEnqueue() {
 // ProcessMessage validates and enqueues a single message
 func (bh *Handler) ProcessMessage(msg *cb.Envelope, addr string) (resp *ab.BroadcastResponse) {
 	logger.Info("================================================================>>> 2.3 ProcessMessage!!!")
-	logger.Infof("Received message: %+v", msg)
 
 	tracker := &MetricsTracker{
 		ChannelID: "unknown",

@@ -598,7 +598,6 @@ func acquireTxSimulator(chainID string, chaincodeName string) bool {
 		return false
 	}
 
-	// ¯\_(�?)_/¯ locking.
 	// Don't get a simulator for the query and config system chaincode.
 	// These don't need the simulator and its read lock results in deadlocks.
 	switch chaincodeName {

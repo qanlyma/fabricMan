@@ -24,7 +24,7 @@ func Cmd() *cobra.Command {
 
 var cobraCommand = &cobra.Command{
 	Use:   "version",
-	Short: "MQL Print fabric peer TEST-version.",
+	Short: "MQL Print fabric peer TEST-version: fabricMan.",
 	Long:  `Print current version of the fabric peer server.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 0 {
