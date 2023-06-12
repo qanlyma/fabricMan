@@ -12,8 +12,7 @@ import (
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric/common/channelconfig"
 	"github.com/hyperledger/fabric/common/flogging"
-	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/rwsetutil"
-	utils "github.com/hyperledger/fabric/protoutil"
+	"github.com/hyperledger/fabric/orderer/common/blockcutter/scheduler"
 )
 
 var logger = flogging.MustGetLogger("orderer.common.blockcutter")
@@ -74,29 +73,6 @@ func NewReceiverImpl(channelID string, sharedConfigFetcher OrdererConfigFetcher,
 //
 // Note that messageBatches can not be greater than 2.
 func (r *receiver) Ordered(msg *cb.Envelope) (messageBatches [][]*cb.Envelope, pending bool) {
-
-	logger.Info("======================================================================>>> BlockCutter.Ordered Received txRWSet!!!")
-	resppayload, _ := utils.GetActionFromEnvelopeMsg(msg)
-	txRWSet := &rwsetutil.TxRwSet{}
-	_ = txRWSet.FromProtoBytes(resppayload.Results)
-	ns := txRWSet.NsRwSets[1]
-
-	for _, read := range ns.KvRwSet.Reads {
-		v := "nil"
-		if read.GetValue() != nil {
-			v = string(read.GetValue())
-		}
-		if read.GetVersion() == nil {
-			logger.Infof("Read Key: %s, Version: nil, Value: %s", read.GetKey(), v)
-		} else {
-			logger.Infof("Read Key: %s, Version: (%d, %d), Value: %s", read.GetKey(), read.GetVersion().GetBlockNum(), read.GetVersion().GetTxNum(), v)
-		}
-	}
-	for _, write := range ns.KvRwSet.Writes {
-		logger.Infof("Write Key: %s, Value: %s", write.GetKey(), string(write.GetValue()))
-	}
-	logger.Infof("======================================================================>>> End of txRWSet!!!")
-
 	if len(r.pendingBatch) == 0 {
 		// We are beginning a new batch, mark the time
 		r.PendingBatchStartTime = time.Now()
@@ -162,6 +138,8 @@ func (r *receiver) Cut() []*cb.Envelope {
 	batch := r.pendingBatch
 	r.pendingBatch = nil
 	r.pendingBatchSizeBytes = 0
+
+	batch = scheduler.ScheduleTxn(batch)
 	return batch
 }
 

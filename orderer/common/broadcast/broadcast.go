@@ -64,7 +64,7 @@ type Handler struct {
 
 // Handle reads requests from a Broadcast stream, processes them, and returns the responses to the stream
 func (bh *Handler) Handle(srv ab.AtomicBroadcast_BroadcastServer) error {
-	logger.Info("=========================================================================>>> 2.2 Handle!!!")
+	logger.Info("=============================================================================>>> 2.2 Handle!!!")
 
 	addr := util.ExtractRemoteAddress(srv.Context())
 	logger.Debugf("Starting new broadcast loop for %s", addr)
@@ -135,7 +135,7 @@ func (mt *MetricsTracker) BeginEnqueue() {
 
 // ProcessMessage validates and enqueues a single message
 func (bh *Handler) ProcessMessage(msg *cb.Envelope, addr string) (resp *ab.BroadcastResponse) {
-	logger.Info("=================================================================>>> 2.3 ProcessMessage!!!")
+	logger.Info("=====================================================================>>> 2.3 ProcessMessage!!!")
 
 	tracker := &MetricsTracker{
 		ChannelID: "unknown",
