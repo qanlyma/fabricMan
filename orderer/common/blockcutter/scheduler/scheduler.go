@@ -11,8 +11,28 @@ var logger = flogging.MustGetLogger("orderer.common.blockcutter")
 
 func ScheduleTxn(batch []*cb.Envelope) []*cb.Envelope {
 	logger.Info("======================================================================>>> 2.6 ScheduleTxn!!!")
-	logger.Info("======================================================================>>> Received txRWSet!!!")
+	printTxRWSet(batch)
 
+	mergeMsg := mergeTx(batch)
+	batch = append([]*cb.Envelope{mergeMsg}, batch...)
+
+	return batch
+}
+
+// merge Txs if they have same readKey or writeKey.
+func mergeTx(batch []*cb.Envelope) *cb.Envelope {
+	msg := buildMsg()
+	return msg
+}
+
+func buildMsg() *cb.Envelope {
+	var msg *cb.Envelope
+	msg.MergeSign = append(msg.MergeSign, '1')
+	return msg
+}
+
+func printTxRWSet(batch []*cb.Envelope) {
+	logger.Info("======================================================================>>> Received txRWSet!!!")
 	for i, msg := range batch {
 		logger.Infof("Tx %d:", i+1)
 		resppayload, _ := utils.GetActionFromEnvelopeMsg(msg)
@@ -35,7 +55,5 @@ func ScheduleTxn(batch []*cb.Envelope) []*cb.Envelope {
 			logger.Infof("Write Key: %s, Value: %s", write.GetKey(), string(write.GetValue()))
 		}
 	}
-
 	logger.Infof("======================================================================>>> End of txRWSet!!!")
-	return batch
 }

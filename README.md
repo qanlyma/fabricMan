@@ -4,4 +4,6 @@
 
 ## 主要修改
 
-1. 在 ReadSet 中加入了 Value
+1. `core/ledger/kvledger/txmgmt/rwsetutil/rwset_builder.go` 在 ReadSet 中加入了 Value
+2. `orderer/common/blockcutter/scheduler/scheduler.go` 用于合并交易
+3. `fabric-protos-go/common/common.pb.go` 在 Envelope 中加入合并交易的标识

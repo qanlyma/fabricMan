@@ -317,6 +317,12 @@ func (v *TxValidator) validateTx(req *blockValidationRequest, results chan<- *bl
 		}
 		return
 	} else if env != nil {
+
+		if env.MergeSign != nil {
+			logger.Infof(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Tx is a MergeTx or BeMergedTx : %s", string(env.MergeSign))
+			logger.Info(env.MergeSign[0] == '1')
+		}
+
 		// validate the transaction: here we check that the transaction
 		// is properly formed, properly signed and that the security
 		// chain binding proposal to endorsements to tx holds. We do

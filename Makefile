@@ -248,8 +248,7 @@ $(BUILD_DIR)/images/%/$(DUMMY):
 		--build-arg GO_VER=$(GO_VER) \
 		--build-arg ALPINE_VER=$(ALPINE_VER) \
 		$(BUILD_ARGS) \
-		-t $(DOCKER_NS)/fabric-$* ./$(BUILD_CONTEXT)
-	docker tag $(DOCKER_NS)/fabric-$* $(DOCKER_NS)/fabric-$*:$(BASE_VERSION)
+		-t $(DOCKER_NS)/fabric-$*:$(BASE_VERSION) ./$(BUILD_CONTEXT)
 	@touch $@
 
 # builds release packages for the host platform
