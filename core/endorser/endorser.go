@@ -22,6 +22,7 @@ import (
 	"github.com/hyperledger/fabric/core/chaincode/lifecycle"
 	"github.com/hyperledger/fabric/core/common/ccprovider"
 	"github.com/hyperledger/fabric/core/ledger"
+	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/rwsetutil"
 	"github.com/hyperledger/fabric/internal/pkg/identity"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protoutil"
@@ -206,6 +207,19 @@ func (e *Endorser) simulateProposal(txParams *ccprovider.TransactionParams, chai
 	if err != nil {
 		e.Metrics.SimulationFailure.With(meterLabels...).Add(1)
 		return nil, nil, nil, nil, err
+	}
+
+	// fabricMan: if "transfer", add merge sign
+	if chaincodeInput.Args != nil {
+		endorserLogger.Infof("chaincodeInput==========================================================>>> %s", string(chaincodeInput.Args[0]))
+		if string(chaincodeInput.Args[0]) == "transfer" {
+			res, _ := rwsetutil.TxRwSetFromProtoMsg(simResult.PubSimulationResults)
+			res.MergeSign = append(res.MergeSign, '1')
+			endorserLogger.Info("res.MergeSign:::", string(res.MergeSign))
+			if simResult.PubSimulationResults, err = res.ToProtoMsg(); err != nil {
+				endorserLogger.Info("ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg")
+			}
+		}
 	}
 
 	if simResult.PvtSimulationResults != nil {

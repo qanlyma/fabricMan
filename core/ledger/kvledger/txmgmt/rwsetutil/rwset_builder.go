@@ -75,7 +75,6 @@ func NewRWSetBuilder() *RWSetBuilder {
 
 // AddToReadSet adds a key and corresponding version to the read-set
 func (b *RWSetBuilder) AddToReadSet(ns string, key string, version *version.Height, val []byte) {
-	logger.Info("===========================================================================>>> 1.5 AddToReadSet!!!")
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)
 	nsPubRwBuilder.readMap[key] = NewKVRead(key, version, val)
 }
@@ -153,7 +152,7 @@ func (b *RWSetBuilder) GetTxSimulationResults() (*ledger.TxSimulationResults, er
 	pubSet := b.GetTxReadWriteSet()
 	if pubSet != nil {
 
-		// do values added into pubSet?
+		// do values added into pubSet>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 		for _, ns := range pubSet.NsRwSets {
 			for _, read := range ns.KvRwSet.Reads {
 				v := "nil"

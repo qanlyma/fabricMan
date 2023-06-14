@@ -10,36 +10,38 @@ import (
 var logger = flogging.MustGetLogger("orderer.common.blockcutter")
 
 func ScheduleTxn(batch []*cb.Envelope) []*cb.Envelope {
+
 	logger.Info("======================================================================>>> 2.6 ScheduleTxn!!!")
+
+	// mergeMsg := mergeTx(batch)
+	// batch = append([]*cb.Envelope{mergeMsg}, batch...)
+
 	printTxRWSet(batch)
-
-	mergeMsg := mergeTx(batch)
-	batch = append([]*cb.Envelope{mergeMsg}, batch...)
-
 	return batch
 }
 
 // merge Txs if they have same readKey or writeKey.
 func mergeTx(batch []*cb.Envelope) *cb.Envelope {
-	msg := buildMsg()
+	msg := buildMsg(batch[0])
 	return msg
 }
 
-func buildMsg() *cb.Envelope {
-	var msg *cb.Envelope
+func buildMsg(baseMsg *cb.Envelope) *cb.Envelope {
+	msg := baseMsg
 	msg.MergeSign = append(msg.MergeSign, '1')
 	return msg
 }
 
 func printTxRWSet(batch []*cb.Envelope) {
-	logger.Info("======================================================================>>> Received txRWSet!!!")
+	logger.Info("=====================================================================>>> Received txRWSet!!!")
 	for i, msg := range batch {
 		logger.Infof("Tx %d:", i+1)
 		resppayload, _ := utils.GetActionFromEnvelopeMsg(msg)
 		txRWSet := &rwsetutil.TxRwSet{}
 		_ = txRWSet.FromProtoBytes(resppayload.Results)
-		ns := txRWSet.NsRwSets[1]
+		logger.Info("is transfer ?", string(txRWSet.MergeSign) == "1", string(txRWSet.MergeSign))
 
+		ns := txRWSet.NsRwSets[1]
 		for _, read := range ns.KvRwSet.Reads {
 			v := "nil"
 			if read.GetValue() != nil {
@@ -55,5 +57,5 @@ func printTxRWSet(batch []*cb.Envelope) {
 			logger.Infof("Write Key: %s, Value: %s", write.GetKey(), string(write.GetValue()))
 		}
 	}
-	logger.Infof("======================================================================>>> End of txRWSet!!!")
+	logger.Infof("=====================================================================>>> End of txRWSet!!!")
 }

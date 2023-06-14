@@ -51,6 +51,8 @@ type TxReadWriteSet struct {
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
 	XXX_sizecache        int32                    `json:"-"`
+
+	MergeSign            []byte                   `protobuf:"bytes,4,opt,name=bemerged,proto3" json:"bemerged,omitempty"`
 }
 
 func (m *TxReadWriteSet) Reset()         { *m = TxReadWriteSet{} }

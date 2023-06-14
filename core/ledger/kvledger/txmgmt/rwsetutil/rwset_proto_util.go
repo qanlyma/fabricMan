@@ -32,7 +32,8 @@ import (
 
 // TxRwSet acts as a proxy of 'rwset.TxReadWriteSet' proto message and helps constructing Read-write set specifically for KV data model
 type TxRwSet struct {
-	NsRwSets []*NsRwSet
+	NsRwSets  []*NsRwSet
+	MergeSign []byte
 }
 
 // NsRwSet encapsulates 'kvrwset.KVRWSet' proto message for a specific name space (chaincode)
@@ -123,6 +124,7 @@ func (txRwSet *TxRwSet) FromProtoBytes(protoBytes []byte) error {
 		return err
 	}
 	txRwSet.NsRwSets = txRwSetTemp.NsRwSets
+	txRwSet.MergeSign = protoMsg.MergeSign
 	return nil
 }
 
@@ -161,6 +163,21 @@ func (txRwSet *TxRwSet) toProtoMsg() (*rwset.TxReadWriteSet, error) {
 		}
 		protoMsg.NsRwset = append(protoMsg.NsRwset, nsRwSetProtoMsg)
 	}
+	return protoMsg, nil
+}
+
+// fabricMan
+func (txRwSet *TxRwSet) ToProtoMsg() (*rwset.TxReadWriteSet, error) {
+	protoMsg := &rwset.TxReadWriteSet{DataModel: rwset.TxReadWriteSet_KV, MergeSign: txRwSet.MergeSign}
+	var nsRwSetProtoMsg *rwset.NsReadWriteSet
+	var err error
+	for _, nsRwSet := range txRwSet.NsRwSets {
+		if nsRwSetProtoMsg, err = nsRwSet.toProtoMsg(); err != nil {
+			return nil, err
+		}
+		protoMsg.NsRwset = append(protoMsg.NsRwset, nsRwSetProtoMsg)
+	}
+
 	return protoMsg, nil
 }
 

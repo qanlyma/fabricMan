@@ -893,8 +893,6 @@ func (c *Chain) writeBlock(block *common.Block, index uint64) {
 //
 // It takes care of config messages as well as the revalidation of messages if the config sequence has advanced.
 func (c *Chain) ordered(msg *orderer.SubmitRequest) (batches [][]*common.Envelope, pending bool, err error) {
-	c.logger.Info("==========================================================================>>> 2.5 ordered!!!")
-
 	seq := c.support.Sequence()
 
 	isconfig, err := c.isConfig(msg.Payload)
