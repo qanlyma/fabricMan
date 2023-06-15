@@ -348,15 +348,21 @@ func (v *TxValidator) validateTx(req *blockValidationRequest, results chan<- *bl
 		}
 
 		// fabricMan
-		// if env.MergeSign != nil {
-		// 	logger.Infof("============================================================================================>>> Tx is a MergeTx", env.MergeSign)
-		// 	results <- &blockValidationResult{
-		// 		tIdx:           tIdx,
-		// 		validationCode: peer.TxValidationCode_VALID,
-		// 		txid:           chdr.TxId,
-		// 	}
-		// 	return
-		// }
+		if env.MergeSign != nil {
+			logger.Infof("=================================================================>>> MergeSign: %s", string(env.MergeSign))
+
+			if string(env.MergeSign) == "1" {
+				logger.Info("=================================================================>>> Tx is a MergeTx!")
+				// results <- &blockValidationResult{
+				// 	tIdx:           tIdx,
+				// 	validationCode: peer.TxValidationCode_VALID,
+				// 	txid:           chdr.TxId,
+				// }
+				// return
+			} else if string(env.MergeSign) == "0" {
+				logger.Info("=================================================================>>> Tx is a BeMergeTx!")
+			}
+		}
 
 		channel := chdr.ChannelId
 		logger.Debugf("Transaction is for channel %s", channel)

@@ -41,7 +41,11 @@ func printTxRWSet(batch []*cb.Envelope) {
 		resppayload, _ := utils.GetActionFromEnvelopeMsg(msg)
 		txRWSet := &rwsetutil.TxRwSet{}
 		_ = txRWSet.FromProtoBytes(resppayload.Results)
-		logger.Info("is transfer ?", string(txRWSet.MergeSign) == "1", string(txRWSet.MergeSign))
+		logger.Info("is transfer: ", string(txRWSet.MergeSign) == "1")
+
+		if string(txRWSet.MergeSign) == "1" {
+			msg.MergeSign = append(msg.MergeSign, '1')
+		}
 
 		ns := txRWSet.NsRwSets[1]
 		for _, read := range ns.KvRwSet.Reads {

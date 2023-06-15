@@ -552,7 +552,6 @@ type Envelope struct {
 	
 	// Added for fabricMan, a sign for Txs had been merged
 	MergeSign []byte `protobuf:"bytes,3,opt,name=mergesign,proto3" json:"mergesign,omitempty"`
-	BeMerged  []byte `protobuf:"bytes,4,opt,name=bemerged,proto3" json:"bemerged,omitempty"`
 }
 
 func (m *Envelope) Reset()         { *m = Envelope{} }

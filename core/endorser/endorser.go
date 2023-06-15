@@ -213,9 +213,8 @@ func (e *Endorser) simulateProposal(txParams *ccprovider.TransactionParams, chai
 		if string(chaincodeInput.Args[0]) == "transfer" {
 			res, _ := rwsetutil.TxRwSetFromProtoMsg(simResult.PubSimulationResults)
 			res.MergeSign = append(res.MergeSign, '1')
-			endorserLogger.Info("res.MergeSign:::", string(res.MergeSign))
 			if simResult.PubSimulationResults, err = res.ToProtoMsg(); err != nil {
-				endorserLogger.Info("ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg")
+				endorserLogger.Info("Failed to add merge sign!")
 			}
 		}
 	}
