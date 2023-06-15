@@ -347,6 +347,7 @@ func (v *TxValidator) validateTx(req *blockValidationRequest, results chan<- *bl
 			return
 		}
 
+		// fabricMan
 		// if env.MergeSign != nil {
 		// 	logger.Infof("============================================================================================>>> Tx is a MergeTx", env.MergeSign)
 		// 	results <- &blockValidationResult{

@@ -113,8 +113,6 @@ func (e *Endorser) callChaincode(txParams *ccprovider.TransactionParams, input *
 		logger.Infof("finished chaincode: %s duration: %dms", chaincodeName, elapsedMillisec)
 	}(time.Now())
 
-	endorserLogger.Info("===========================================================================>>> 1.3 callChaincode!!!")
-
 	meterLabels := []string{
 		"channel", txParams.ChannelID,
 		"chaincode", chaincodeName,

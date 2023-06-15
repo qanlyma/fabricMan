@@ -73,7 +73,7 @@ func NewReceiverImpl(channelID string, sharedConfigFetcher OrdererConfigFetcher,
 //
 // Note that messageBatches can not be greater than 2.
 func (r *receiver) Ordered(msg *cb.Envelope) (messageBatches [][]*cb.Envelope, pending bool) {
-	logger.Info("==========================================================================>>> 2.5 Ordered!!!")
+	logger.Info("==========================================================================>>> 2.3 Ordered!!!")
 
 	if len(r.pendingBatch) == 0 {
 		// We are beginning a new batch, mark the time
@@ -141,6 +141,7 @@ func (r *receiver) Cut() []*cb.Envelope {
 	r.pendingBatch = nil
 	r.pendingBatchSizeBytes = 0
 
+	// fabricMan
 	batch = scheduler.ScheduleTxn(batch)
 	return batch
 }

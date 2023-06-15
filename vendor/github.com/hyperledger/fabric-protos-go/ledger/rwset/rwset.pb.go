@@ -52,6 +52,7 @@ type TxReadWriteSet struct {
 	XXX_unrecognized     []byte                   `json:"-"`
 	XXX_sizecache        int32                    `json:"-"`
 
+	// added for fabricMan
 	MergeSign            []byte                   `protobuf:"bytes,4,opt,name=bemerged,proto3" json:"bemerged,omitempty"`
 }
 

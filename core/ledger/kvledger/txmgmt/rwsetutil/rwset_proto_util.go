@@ -31,6 +31,7 @@ import (
 /////////////////////////////////////////////////////////////////
 
 // TxRwSet acts as a proxy of 'rwset.TxReadWriteSet' proto message and helps constructing Read-write set specifically for KV data model
+// 'MergeSign' added for fabricMan
 type TxRwSet struct {
 	NsRwSets  []*NsRwSet
 	MergeSign []byte
@@ -124,6 +125,8 @@ func (txRwSet *TxRwSet) FromProtoBytes(protoBytes []byte) error {
 		return err
 	}
 	txRwSet.NsRwSets = txRwSetTemp.NsRwSets
+
+	// fabricMan
 	txRwSet.MergeSign = protoMsg.MergeSign
 	return nil
 }
@@ -342,6 +345,7 @@ func collPvtRwSetFromProtoMsg(protoMsg *rwset.CollectionPvtReadWriteSet) (*CollP
 }
 
 // NewKVRead helps constructing proto message kvrwset.KVRead
+// 'val' added for fabricMan
 func NewKVRead(key string, version *version.Height, val []byte) *kvrwset.KVRead {
 	return &kvrwset.KVRead{Key: key, Version: newProtoVersion(version), Value: val}
 }

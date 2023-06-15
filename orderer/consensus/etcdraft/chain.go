@@ -527,7 +527,7 @@ func (c *Chain) Consensus(req *orderer.ConsensusRequest, sender uint64) error {
 // - the actual leader via the transport mechanism
 // The call fails if there's no leader elected yet.
 func (c *Chain) Submit(req *orderer.SubmitRequest, sender uint64) error {
-	c.logger.Info("===========================================================================>>> 2.4 Submit!!!")
+	c.logger.Info("===========================================================================>>> 2.2 Submit!!!")
 
 	if err := c.isRunning(); err != nil {
 		c.Metrics.ProposalFailures.Add(1)

@@ -185,6 +185,7 @@ func (m *KVRead) GetKey() string {
 	return ""
 }
 
+// fabricMan
 func (m *KVRead) GetValue() []byte {
 	if m != nil {
 		return m.Value

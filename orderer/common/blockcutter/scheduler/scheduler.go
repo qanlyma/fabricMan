@@ -1,3 +1,5 @@
+// fabricMan
+
 package scheduler
 
 import (
@@ -11,7 +13,7 @@ var logger = flogging.MustGetLogger("orderer.common.blockcutter")
 
 func ScheduleTxn(batch []*cb.Envelope) []*cb.Envelope {
 
-	logger.Info("======================================================================>>> 2.6 ScheduleTxn!!!")
+	logger.Info("======================================================================>>> 2.4 ScheduleTxn!!!")
 
 	// mergeMsg := mergeTx(batch)
 	// batch = append([]*cb.Envelope{mergeMsg}, batch...)
