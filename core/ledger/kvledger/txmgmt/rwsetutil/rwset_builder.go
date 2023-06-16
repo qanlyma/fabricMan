@@ -152,27 +152,6 @@ func (b *RWSetBuilder) GetTxSimulationResults() (*ledger.TxSimulationResults, er
 	// Compute the proto bytes for pub rwset
 	pubSet := b.GetTxReadWriteSet()
 	if pubSet != nil {
-
-		// fabricMan
-		// do values added into pubSet>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-		// for _, ns := range pubSet.NsRwSets {
-		// 	for _, read := range ns.KvRwSet.Reads {
-		// 		v := "nil"
-		// 		if read.GetValue() != nil {
-		// 			v = string(read.GetValue())
-		// 		}
-
-		// 		if read.GetVersion() == nil {
-		// 			logger.Infof("Read Key: %s, Version: nil, Value: %s", read.GetKey(), v)
-		// 		} else {
-		// 			logger.Infof("Read Key: %s, Version: (%d, %d), Value: %s", read.GetKey(), read.GetVersion().GetBlockNum(), read.GetVersion().GetTxNum(), v)
-		// 		}
-		// 	}
-		// 	for _, write := range ns.KvRwSet.Writes {
-		// 		logger.Infof("Write Key: %s, Value: %s", write.GetKey(), string(write.GetValue()))
-		// 	}
-		// }
-
 		if pubDataProto, err = pubSet.toProtoMsg(); err != nil {
 			return nil, err
 		}

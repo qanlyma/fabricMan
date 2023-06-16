@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/fabric/core/committer/txvalidator/v20/plugindispatcher"
 	"github.com/hyperledger/fabric/core/common/validation"
 	"github.com/hyperledger/fabric/core/ledger"
+	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/rwsetutil"
 	"github.com/hyperledger/fabric/internal/pkg/txflags"
 	"github.com/hyperledger/fabric/msp"
 	"github.com/hyperledger/fabric/protoutil"
@@ -350,17 +351,39 @@ func (v *TxValidator) validateTx(req *blockValidationRequest, results chan<- *bl
 		// fabricMan
 		if env.MergeSign != nil {
 			logger.Infof("=================================================================>>> MergeSign: %s", string(env.MergeSign))
-
 			if string(env.MergeSign) == "1" {
 				logger.Info("=================================================================>>> Tx is a MergeTx!")
+				resppayload, err := protoutil.GetActionFromEnvelopeMsg(env)
+				if err != nil {
+					logger.Info("err 1")
+				}
+				txRWSet := &rwsetutil.TxRwSet{}
+				err2 := txRWSet.FromProtoBytes(resppayload.Results)
+				if err2 != nil {
+					logger.Info("err 2")
+				}
+				ns := txRWSet.NsRwSets[1]
+				for _, read := range ns.KvRwSet.Reads {
+					v := "nil"
+					if read.GetValue() != nil {
+						v = string(read.GetValue())
+					}
+					if read.GetVersion() == nil {
+						logger.Infof("Read Key: %s, Version: nil, Value: %s", read.GetKey(), v)
+					} else {
+						logger.Infof("Read Key: %s, Version: (%d, %d), Value: %s", read.GetKey(), read.GetVersion().GetBlockNum(), read.GetVersion().GetTxNum(), v)
+					}
+				}
+				for _, write := range ns.KvRwSet.Writes {
+					logger.Infof("Write Key: %s, Value: %s", write.GetKey(), string(write.GetValue()))
+				}
+
 				// results <- &blockValidationResult{
 				// 	tIdx:           tIdx,
 				// 	validationCode: peer.TxValidationCode_VALID,
 				// 	txid:           chdr.TxId,
 				// }
 				// return
-			} else if string(env.MergeSign) == "0" {
-				logger.Info("=================================================================>>> Tx is a BeMergeTx!")
 			}
 		}
 
