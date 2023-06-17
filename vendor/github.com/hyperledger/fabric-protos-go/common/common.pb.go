@@ -551,7 +551,8 @@ type Envelope struct {
 	XXX_sizecache        int32    `json:"-"`
 	
 	// Added for fabricMan, a sign for Txs had been merged
-	MergeSign []byte `protobuf:"bytes,3,opt,name=mergesign,proto3" json:"mergesign,omitempty"`
+	MergeSign 		[]byte `protobuf:"bytes,3,opt,name=mergesign,proto3" json:"mergesign,omitempty"`
+	MergePayload 	[]byte `protobuf:"bytes,4,opt,name=mergepayload,proto3" json:"mergepayload,omitempty"`
 }
 
 func (m *Envelope) Reset()         { *m = Envelope{} }

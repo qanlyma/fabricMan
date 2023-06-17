@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	cb "github.com/hyperledger/fabric-protos-go/common"
+	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
 	"github.com/hyperledger/fabric/common/flogging"
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/rwsetutil"
 	utils "github.com/hyperledger/fabric/protoutil"
@@ -28,6 +29,10 @@ func ScheduleTxn(batch []*cb.Envelope) []*cb.Envelope {
 	moneyMap = make(map[string]int)
 	txSet := unMarshalAndSort(batch)
 	logger.Infof("Numbers of transfer: %d, %+v, %+v", len(txSet), txSet, moneyMap)
+	if len(txSet) != 0 {
+		mergeMsg := buildMergeMsg(txSet[0].tx)
+		batch = append(batch, mergeMsg)
+	}
 
 	return batch
 }
@@ -56,7 +61,7 @@ func unMarshalAndSort(batch []*cb.Envelope) (transferSet []Transfer) {
 		// Sort
 		if txRWSet.MergeSign != nil {
 			// Add MergeSign to Envelope
-			msg.MergeSign = append(msg.MergeSign, '1')
+			msg.MergeSign = []byte{'1'}
 			// Add Tx to list
 			money, _ := strconv.Atoi(string(txRWSet.MergeSign))
 			a := ns.KvRwSet.Reads[1].GetKey()
@@ -75,6 +80,27 @@ func unMarshalAndSort(batch []*cb.Envelope) (transferSet []Transfer) {
 	}
 	logger.Info("=================================================================>>> End of txRWSet!!!")
 	return
+}
+
+func buildMergeMsg(base *cb.Envelope) *cb.Envelope {
+	logger.Info("buildMergeMsg...")
+	kv := &kvrwset.KVWrite{Key: "Qanly", Value: []byte(strconv.Itoa(9999))}
+	ws := make([]*kvrwset.KVWrite, 1)
+	ws[0] = kv
+	rws := &kvrwset.KVRWSet{Writes: ws}
+	ns := &rwsetutil.NsRwSet{NameSpace: "Merge", KvRwSet: rws}
+	nss := make([]*rwsetutil.NsRwSet, 2)
+	nss[0] = ns
+	nss[1] = ns
+	txRWSet := &rwsetutil.TxRwSet{NsRwSets: nss}
+
+	// Add WriteSet in Envelope.Payload for simplicity
+	pl, err := txRWSet.ToProtoBytes()
+	if err != nil {
+		logger.Info("err 3")
+	}
+	msg := &cb.Envelope{Payload: base.Payload, Signature: base.Signature, MergeSign: []byte{'0'}, MergePayload: pl}
+	return msg
 }
 
 func printTxRWSet(ns *rwsetutil.NsRwSet) {
