@@ -133,6 +133,28 @@ func (v *validator) validateTx(txRWSet *rwsetutil.TxRwSet, updates *publicAndHas
 	// logger.Debugf("validateTx - validating txRWSet: %s", spew.Sdump(txRWSet))
 	for _, nsRWSet := range txRWSet.NsRwSets {
 		ns := nsRWSet.NameSpace
+
+		logger.Info("===============================================================>>> validateTx!!!", string(txRWSet.MergeSign))
+		for _, read := range nsRWSet.KvRwSet.Reads {
+			v := "nil"
+			if read.GetValue() != nil {
+				v = string(read.GetValue())
+			}
+			if read.GetVersion() == nil {
+				logger.Infof("Read Key: %s, Version: nil, Value: %s", read.GetKey(), v)
+			} else {
+				logger.Infof("Read Key: %s, Version: (%d, %d), Value: %s", read.GetKey(), read.GetVersion().GetBlockNum(), read.GetVersion().GetTxNum(), v)
+			}
+		}
+		for _, write := range nsRWSet.KvRwSet.Writes {
+			logger.Infof("Write Key: %s, Value: %s", write.GetKey(), string(write.GetValue()))
+		}
+
+		if txRWSet.MergeSign != nil && string(txRWSet.MergeSign) == "0" {
+			logger.Info("===============================================================>>> return peer.TxValidationCode_VALID!!!")
+			return peer.TxValidationCode_VALID, nil
+		}
+
 		// Validate public reads
 		if valid, err := v.validateReadSet(ns, nsRWSet.KvRwSet.Reads, updates.publicUpdates); !valid || err != nil {
 			if err != nil {

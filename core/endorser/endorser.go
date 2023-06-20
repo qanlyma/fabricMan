@@ -215,6 +215,8 @@ func (e *Endorser) simulateProposal(txParams *ccprovider.TransactionParams, chai
 			res.MergeSign = chaincodeInput.Args[3]
 			if simResult.PubSimulationResults, err = res.ToProtoMsg(); err != nil {
 				endorserLogger.Info("Failed to add merge sign!")
+			} else {
+				endorserLogger.Info("========================================================================>>> Add MergeSign = ", string(res.MergeSign))
 			}
 		}
 	}

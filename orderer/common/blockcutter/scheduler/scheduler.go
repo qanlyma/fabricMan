@@ -21,27 +21,28 @@ type Transfer struct {
 
 var moneyMap map[string]int
 
-var logger = flogging.MustGetLogger("orderer.common.blockcutter")
+var logger = flogging.MustGetLogger("orderer.common.scheduler")
 
 func ScheduleTxn(batch []*cb.Envelope) []*cb.Envelope {
-	logger.Info("======================================================================>>> 2.4 ScheduleTxn!!!")
+	logger.Info("========================================================================>>> 2.4 ScheduleTxn!!!")
 
 	moneyMap = make(map[string]int)
 	txSet := unMarshalAndSort(batch)
 	logger.Infof("Numbers of transfer: %d, %+v, %+v", len(txSet), txSet, moneyMap)
-	if len(txSet) != 0 {
-		mergeMsg := buildMergeMsg(txSet[0].tx)
-		batch = append(batch, mergeMsg)
+	if len(txSet) > 0 {
+		buildMergeMsg(txSet[0].tx)
+		// mergeMsg := buildMergeMsg(txSet[0].tx)
+		// batch = append([]*cb.Envelope{mergeMsg}, batch...)
 	}
-
+	logger.Info("========================================================================>>> Complete, len of batch:", len(batch))
 	return batch
 }
 
 func unMarshalAndSort(batch []*cb.Envelope) (transferSet []Transfer) {
-	logger.Info("=================================================================>>> Received txRWSet!!!")
+	logger.Info("===================================================================>>> Received txRWSet!!!")
 
 	for i, msg := range batch {
-		logger.Infof("|||||| Tx %d:", i+1)
+		logger.Infof("|||||||||||||||||| Tx %d:", i+1)
 
 		// UnMarshal
 		resppayload, err := utils.GetActionFromEnvelopeMsg(msg)
@@ -53,7 +54,7 @@ func unMarshalAndSort(batch []*cb.Envelope) (transferSet []Transfer) {
 		if err != nil {
 			logger.Info("err 2")
 		}
-		logger.Info("is transfer: ", txRWSet.MergeSign != nil, "transfer money: ", string(txRWSet.MergeSign))
+		logger.Info("is transfer:", txRWSet.MergeSign != nil)
 
 		ns := txRWSet.NsRwSets[1]
 		printTxRWSet(ns)
@@ -78,7 +79,7 @@ func unMarshalAndSort(batch []*cb.Envelope) (transferSet []Transfer) {
 			}
 		}
 	}
-	logger.Info("=================================================================>>> End of txRWSet!!!")
+	logger.Info("===================================================================>>> End of txRWSet!!!")
 	return
 }
 
@@ -88,10 +89,10 @@ func buildMergeMsg(base *cb.Envelope) *cb.Envelope {
 	ws := make([]*kvrwset.KVWrite, 1)
 	ws[0] = kv
 	rws := &kvrwset.KVRWSet{Writes: ws}
-	ns := &rwsetutil.NsRwSet{NameSpace: "Merge", KvRwSet: rws}
-	nss := make([]*rwsetutil.NsRwSet, 2)
+	ns := &rwsetutil.NsRwSet{NameSpace: "simple", KvRwSet: rws}
+	nss := make([]*rwsetutil.NsRwSet, 1)
 	nss[0] = ns
-	nss[1] = ns
+	// nss[1] = ns
 	txRWSet := &rwsetutil.TxRwSet{NsRwSets: nss}
 
 	// Add WriteSet in Envelope.Payload for simplicity
@@ -99,8 +100,9 @@ func buildMergeMsg(base *cb.Envelope) *cb.Envelope {
 	if err != nil {
 		logger.Info("err 3")
 	}
-	msg := &cb.Envelope{Payload: base.Payload, Signature: base.Signature, MergeSign: []byte{'0'}, MergePayload: pl}
-	return msg
+	base.MergePayload = pl
+	base.MergeSign = []byte{'0'}
+	return base
 }
 
 func printTxRWSet(ns *rwsetutil.NsRwSet) {

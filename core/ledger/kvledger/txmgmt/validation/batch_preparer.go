@@ -207,26 +207,35 @@ func preprocessProtoBlock(postOrderSimulatorProvider PostOrderSimulatorProvider,
 		if env, err = protoutil.GetEnvelopeFromBlock(envBytes); err == nil {
 
 			//fabricMan
-			if string(env.MergeSign) == "0" || string(env.MergeSign) == "1" {
-				logger.Info("==================================================================>>> preprocessProtoBlock")
-				txRWSet := &rwsetutil.TxRwSet{}
+			if env.MergeSign != nil {
+				logger.Info("==================================================================>>> MergeSign: ", string(env.MergeSign))
+				txRWSet1 := &rwsetutil.TxRwSet{}
 				if string(env.MergeSign) == "1" {
 					resppayload, err := protoutil.GetActionFromEnvelopeMsg(env)
 					if err != nil {
 						logger.Info("err 1")
 					}
-					err = txRWSet.FromProtoBytes(resppayload.Results)
+					err = txRWSet1.FromProtoBytes(resppayload.Results)
 					if err != nil {
 						logger.Info("err 2")
 					}
 				} else {
-					err = txRWSet.FromProtoBytes(env.MergePayload)
+					err = txRWSet1.FromProtoBytes(env.MergePayload)
 					if err != nil {
 						logger.Info("err 3")
 					}
+					txRWSet1.MergeSign = []byte{'0'}
+					b.txs = append(b.txs, &transaction{
+						indexInBlock:            txIndex,
+						id:                      "mergetx",
+						rwset:                   txRWSet1,
+						containsPostOrderWrites: false,
+					})
+					logger.Info("==================================================================>>> preprocessProtoBlockinfo:", string(txRWSet1.MergeSign))
+					continue
 				}
 
-				ns := txRWSet.NsRwSets[1]
+				ns := txRWSet1.NsRwSets[1]
 				for _, read := range ns.KvRwSet.Reads {
 					v := "nil"
 					if read.GetValue() != nil {
