@@ -21,6 +21,7 @@ type Transfer struct {
 
 var transferSet []Transfer
 var moneyMap map[string]int
+var contract string
 
 var logger = flogging.MustGetLogger("orderer.common.blockcutter.scheduler")
 
@@ -35,8 +36,7 @@ func ScheduleTxn(batch []*cb.Envelope) []*cb.Envelope {
 		buildMergeMsg(transferSet[0].tx)
 	}
 
-	logger.Infof("After buliding: %+v", moneyMap)
-	logger.Info("============================================================>>> Complete, len of batch:", len(batch))
+	logger.Info("============================================================>>> Complete", moneyMap)
 	return batch
 }
 
@@ -59,6 +59,7 @@ func unMarshalAndSort(batch []*cb.Envelope) (transferSet []Transfer) {
 		logger.Info("is transfer:", txRWSet.MergeSign != nil)
 
 		ns := txRWSet.NsRwSets[1]
+		contract = ns.NameSpace
 		printTxRWSet(ns)
 
 		// Sort
@@ -100,14 +101,12 @@ func buildMergeMsg(base *cb.Envelope) *cb.Envelope {
 		ws = append(ws, kv)
 	}
 
-	logger.Info("=======================================================>>> ", len(moneyMap), ws)
-
 	rws := &kvrwset.KVRWSet{Writes: ws}
-	ns := &rwsetutil.NsRwSet{NameSpace: "simple", KvRwSet: rws}
+	ns := &rwsetutil.NsRwSet{NameSpace: contract, KvRwSet: rws}
 	printTxRWSet(ns)
 	nss := make([]*rwsetutil.NsRwSet, 1)
 	nss[0] = ns
-	txRWSet := &rwsetutil.TxRwSet{NsRwSets: nss}
+	txRWSet := &rwsetutil.TxRwSet{NsRwSets: nss, MergeSign: []byte{'0'}}
 
 	// Add WriteSet in Envelope.MergePayload for simplicity
 	pl, _ := txRWSet.ToProtoBytes()
@@ -117,6 +116,7 @@ func buildMergeMsg(base *cb.Envelope) *cb.Envelope {
 }
 
 func printTxRWSet(ns *rwsetutil.NsRwSet) {
+	logger.Infof("Contract: %s", ns.NameSpace)
 	for _, read := range ns.KvRwSet.Reads {
 		v := "nil"
 		if read.GetValue() != nil {

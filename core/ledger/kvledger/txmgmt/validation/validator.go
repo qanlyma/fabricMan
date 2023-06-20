@@ -134,7 +134,7 @@ func (v *validator) validateTx(txRWSet *rwsetutil.TxRwSet, updates *publicAndHas
 	for _, nsRWSet := range txRWSet.NsRwSets {
 		ns := nsRWSet.NameSpace
 
-		logger.Info("===============================================================>>> validateTx!!!", string(txRWSet.MergeSign))
+		logger.Info("============================================================================>>> validateTx.MergeSign: ", string(txRWSet.MergeSign))
 		for _, read := range nsRWSet.KvRwSet.Reads {
 			v := "nil"
 			if read.GetValue() != nil {
@@ -151,7 +151,7 @@ func (v *validator) validateTx(txRWSet *rwsetutil.TxRwSet, updates *publicAndHas
 		}
 
 		if txRWSet.MergeSign != nil && string(txRWSet.MergeSign) == "0" {
-			logger.Info("===============================================================>>> return peer.TxValidationCode_VALID!!!")
+			logger.Info("============================================================================>>> return peer.TxValidationCode_VALID!!!")
 			return peer.TxValidationCode_VALID, nil
 		}
 
