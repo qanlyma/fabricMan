@@ -19,27 +19,29 @@ type Transfer struct {
 	val  int
 }
 
+var transferSet []Transfer
 var moneyMap map[string]int
 
-var logger = flogging.MustGetLogger("orderer.common.scheduler")
+var logger = flogging.MustGetLogger("orderer.common.blockcutter.scheduler")
 
 func ScheduleTxn(batch []*cb.Envelope) []*cb.Envelope {
-	logger.Info("========================================================================>>> 2.4 ScheduleTxn!!!")
+	logger.Info("============================================================>>> 2.4 ScheduleTxn!!!")
 
 	moneyMap = make(map[string]int)
-	txSet := unMarshalAndSort(batch)
-	logger.Infof("Numbers of transfer: %d, %+v, %+v", len(txSet), txSet, moneyMap)
-	if len(txSet) > 0 {
-		buildMergeMsg(txSet[0].tx)
-		// mergeMsg := buildMergeMsg(txSet[0].tx)
-		// batch = append([]*cb.Envelope{mergeMsg}, batch...)
+	transferSet = unMarshalAndSort(batch)
+	logger.Infof("Numbers of transfer: %d, %+v, %+v", len(transferSet), transferSet, moneyMap)
+
+	if len(transferSet) > 0 {
+		buildMergeMsg(transferSet[0].tx)
 	}
-	logger.Info("========================================================================>>> Complete, len of batch:", len(batch))
+
+	logger.Infof("After buliding: %+v", moneyMap)
+	logger.Info("============================================================>>> Complete, len of batch:", len(batch))
 	return batch
 }
 
 func unMarshalAndSort(batch []*cb.Envelope) (transferSet []Transfer) {
-	logger.Info("===================================================================>>> Received txRWSet!!!")
+	logger.Info("=======================================================>>> Received txRWSet!!!")
 
 	for i, msg := range batch {
 		logger.Infof("|||||||||||||||||| Tx %d:", i+1)
@@ -79,27 +81,36 @@ func unMarshalAndSort(batch []*cb.Envelope) (transferSet []Transfer) {
 			}
 		}
 	}
-	logger.Info("===================================================================>>> End of txRWSet!!!")
+	logger.Info("=======================================================>>> End of txRWSet!!!")
 	return
 }
 
 func buildMergeMsg(base *cb.Envelope) *cb.Envelope {
 	logger.Info("buildMergeMsg...")
-	kv := &kvrwset.KVWrite{Key: "Qanly", Value: []byte(strconv.Itoa(9999))}
-	ws := make([]*kvrwset.KVWrite, 1)
-	ws[0] = kv
+	for _, t := range transferSet {
+		if moneyMap[t.from] >= t.val {
+			moneyMap[t.from] -= t.val
+			moneyMap[t.to] += t.val
+		}
+	}
+
+	var ws []*kvrwset.KVWrite
+	for k, v := range moneyMap {
+		kv := &kvrwset.KVWrite{Key: k, Value: []byte(strconv.Itoa(v))}
+		ws = append(ws, kv)
+	}
+
+	logger.Info("=======================================================>>> ", len(moneyMap), ws)
+
 	rws := &kvrwset.KVRWSet{Writes: ws}
 	ns := &rwsetutil.NsRwSet{NameSpace: "simple", KvRwSet: rws}
+	printTxRWSet(ns)
 	nss := make([]*rwsetutil.NsRwSet, 1)
 	nss[0] = ns
-	// nss[1] = ns
 	txRWSet := &rwsetutil.TxRwSet{NsRwSets: nss}
 
-	// Add WriteSet in Envelope.Payload for simplicity
-	pl, err := txRWSet.ToProtoBytes()
-	if err != nil {
-		logger.Info("err 3")
-	}
+	// Add WriteSet in Envelope.MergePayload for simplicity
+	pl, _ := txRWSet.ToProtoBytes()
 	base.MergePayload = pl
 	base.MergeSign = []byte{'0'}
 	return base
