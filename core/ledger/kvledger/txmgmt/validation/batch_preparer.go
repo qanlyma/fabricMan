@@ -207,50 +207,18 @@ func preprocessProtoBlock(postOrderSimulatorProvider PostOrderSimulatorProvider,
 		if env, err = protoutil.GetEnvelopeFromBlock(envBytes); err == nil {
 
 			//fabricMan
-			if env.MergeSign != nil {
-				logger.Info("==================================================================>>> MergeSign: ", string(env.MergeSign))
-				txRWSet1 := &rwsetutil.TxRwSet{}
-				if string(env.MergeSign) == "1" {
-					resppayload, err := protoutil.GetActionFromEnvelopeMsg(env)
-					if err != nil {
-						logger.Info("err 1")
-					}
-					err = txRWSet1.FromProtoBytes(resppayload.Results)
-					if err != nil {
-						logger.Info("err 2")
-					}
-				} else {
-					err = txRWSet1.FromProtoBytes(env.MergePayload)
-					if err != nil {
-						logger.Info("err 3")
-					}
-					txRWSet1.MergeSign = []byte{'0'}
-					b.txs = append(b.txs, &transaction{
-						indexInBlock:            txIndex,
-						id:                      "mergetx",
-						rwset:                   txRWSet1,
-						containsPostOrderWrites: false,
-					})
-					logger.Info("==================================================================>>> preprocessProtoBlockinfo:", string(txRWSet1.MergeSign))
-					continue
-				}
-
-				ns := txRWSet1.NsRwSets[1]
-				for _, read := range ns.KvRwSet.Reads {
-					v := "nil"
-					if read.GetValue() != nil {
-						v = string(read.GetValue())
-					}
-					if read.GetVersion() == nil {
-						logger.Infof("Read Key: %s, Version: nil, Value: %s", read.GetKey(), read.GetValue())
-					} else {
-						logger.Infof("Read Key: %s, Version: (%d, %d), Value: %s", read.GetKey(), read.GetVersion().GetBlockNum(), read.GetVersion().GetTxNum(), v)
-					}
-				}
-				for _, write := range ns.KvRwSet.Writes {
-					logger.Infof("Write Key: %s, Value: %s", write.GetKey(), string(write.GetValue()))
-				}
-				logger.Info("==================================================================>>> preprocessProtoBlock")
+			if env.MergeSign != nil && string(env.MergeSign) == "0" {
+				logger.Info("This is a merge Tx. Add to updates.")
+				txRWSet := &rwsetutil.TxRwSet{}
+				_ = txRWSet.FromProtoBytes(env.MergePayload)
+				txRWSet.MergeSign = []byte{'0'}
+				b.txs = append(b.txs, &transaction{
+					indexInBlock:            txIndex,
+					id:                      "mergetx",
+					rwset:                   txRWSet,
+					containsPostOrderWrites: false,
+				})
+				continue
 			}
 
 			if payload, err = protoutil.UnmarshalPayload(env.Payload); err == nil {

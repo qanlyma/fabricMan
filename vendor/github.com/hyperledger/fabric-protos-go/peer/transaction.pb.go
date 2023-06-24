@@ -52,6 +52,9 @@ const (
 	TxValidationCode_INVALID_CHAINCODE            TxValidationCode = 25
 	TxValidationCode_NOT_VALIDATED                TxValidationCode = 254
 	TxValidationCode_INVALID_OTHER_REASON         TxValidationCode = 255
+
+	// fabricMan
+	TxValidationCode_MERGED                       TxValidationCode = 26
 )
 
 var TxValidationCode_name = map[int32]string{
@@ -83,6 +86,9 @@ var TxValidationCode_name = map[int32]string{
 	25:  "INVALID_CHAINCODE",
 	254: "NOT_VALIDATED",
 	255: "INVALID_OTHER_REASON",
+
+	// fabricMan
+	26:  "Tx_MERGED",
 }
 
 var TxValidationCode_value = map[string]int32{
@@ -114,6 +120,9 @@ var TxValidationCode_value = map[string]int32{
 	"INVALID_CHAINCODE":            25,
 	"NOT_VALIDATED":                254,
 	"INVALID_OTHER_REASON":         255,
+
+	// fabricMan
+	"Tx_MERGED":                    26,
 }
 
 func (x TxValidationCode) String() string {

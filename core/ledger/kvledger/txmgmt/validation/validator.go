@@ -134,6 +134,7 @@ func (v *validator) validateTx(txRWSet *rwsetutil.TxRwSet, updates *publicAndHas
 	for _, nsRWSet := range txRWSet.NsRwSets {
 		ns := nsRWSet.NameSpace
 
+		// fabricMan: MVCC for merge tx only
 		logger.Info("============================================================================>>> validateTx.MergeSign: ", string(txRWSet.MergeSign))
 		for _, read := range nsRWSet.KvRwSet.Reads {
 			v := "nil"
@@ -150,9 +151,8 @@ func (v *validator) validateTx(txRWSet *rwsetutil.TxRwSet, updates *publicAndHas
 			logger.Infof("Write Key: %s, Value: %s", write.GetKey(), string(write.GetValue()))
 		}
 
-		if txRWSet.MergeSign != nil && string(txRWSet.MergeSign) == "0" {
-			logger.Info("============================================================================>>> return peer.TxValidationCode_VALID!!!")
-			return peer.TxValidationCode_VALID, nil
+		if txRWSet.MergeSign != nil && string(txRWSet.MergeSign) != "0" {
+			return peer.TxValidationCode_MERGED, nil
 		}
 
 		// Validate public reads
