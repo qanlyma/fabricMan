@@ -80,6 +80,7 @@ func (b *RWSetBuilder) AddToReadSet(ns string, key string, version *version.Heig
 	nsPubRwBuilder.readMap[key] = NewKVRead(key, version, val)
 }
 
+// fabricMan add the value
 // AddToWriteSet adds a key and value to the write-set
 func (b *RWSetBuilder) AddToWriteSet(ns string, key string, value []byte) {
 	nsPubRwBuilder := b.getOrCreateNsPubRwBuilder(ns)

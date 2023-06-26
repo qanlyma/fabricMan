@@ -5,7 +5,7 @@
 ### 交易合并：
 
 1. `core/ledger/kvledger/txmgmt/rwsetutil/rwset_builder.go` 在 ReadSet 中加入了 Value
-2. `core/ledger/kvledger/txmgmt/rwsetutil/rwset_proto_util.go` 在 TxRwSet 中加入 MergeSign `res.MergeSign = []byte{'1'}`
+2. `core/ledger/kvledger/txmgmt/rwsetutil/rwset_proto_util.go` 在 TxRwSet 中加入 MergeSign
 3. `fabric-protos-go/common/common.pb.go` 在 Envelope 中加入合并交易的标识 MergeSign（可去掉？） 和 MergePayload（传递合并的读写集）
 4. `vendor/github.com/hyperledger/fabric-protos-go/peer/transaction.pb.go` 加入 TxValidationCode 通知被合并的交易
 
