@@ -135,7 +135,7 @@ func (v *validator) validateTx(txRWSet *rwsetutil.TxRwSet, updates *publicAndHas
 		ns := nsRWSet.NameSpace
 
 		// fabricMan: MVCC for merge tx only
-		logger.Info("============================================================================>>> validateTx.MergeSign: ", string(txRWSet.MergeSign))
+		logger.Info("============================================================================>>> txRWSet.MergeSign: ", string(txRWSet.MergeSign))
 		for _, read := range nsRWSet.KvRwSet.Reads {
 			v := "nil"
 			if read.GetValue() != nil {

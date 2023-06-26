@@ -10,19 +10,21 @@ import (
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/rwsetutil"
 )
 
-func mergeTransferTxs(batch []*cb.Envelope) []*cb.Envelope {
-	moneyMap = make(map[string]int)
-	versionMap = make(map[string]*kvrwset.Version)
-	unMarshalAndSort(batch)
+var transferSet []Transfer
+var moneyMap map[string]int
+var versionMap map[string]*kvrwset.Version
+var contract string
+
+type Transfer struct {
+	tx   *cb.Envelope
+	from string
+	to   string
+	val  int
+}
+
+func mergeTransferTxs(batch []*cb.Envelope) *cb.Envelope {
 	logger.Infof("Numbers of transfer: %d, %+v, %+v", len(transferSet), transferSet, moneyMap)
-
-	if len(transferSet) > 0 {
-		buildMergeMsg(transferSet[0].tx)
-	}
-
-	logger.Info("moneyMap after building: ", moneyMap)
-	transferSet = make([]Transfer, 0)
-	return batch
+	return buildMergeMsg(transferSet[0].tx)
 }
 
 func buildMergeMsg(base *cb.Envelope) *cb.Envelope {
@@ -33,6 +35,7 @@ func buildMergeMsg(base *cb.Envelope) *cb.Envelope {
 			moneyMap[t.to] += t.val
 		}
 	}
+	logger.Info("moneyMap after building: ", moneyMap)
 
 	var ws []*kvrwset.KVWrite
 	for k, v := range moneyMap {

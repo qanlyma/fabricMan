@@ -99,7 +99,7 @@ func (tscc *tarjanscc) SCCUtil(u int32) {
 
 			// check if subtree rooted at v hash a connection to one of the ancestors of u
 			tscc.low[u] = min(tscc.low[u], tscc.low[v])
-		} else if tscc.stackMember[v] == true {
+		} else if tscc.stackMember[v] {
 			// update the tscc.low value of u only if v is already in stack
 			tscc.low[u] = min(tscc.low[u], tscc.disc[v])
 		}

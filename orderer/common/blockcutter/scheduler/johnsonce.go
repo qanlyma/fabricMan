@@ -104,7 +104,7 @@ func (jce *johnsonce) FindCyclesRecur(component *SCC, explore []bool, startV, cu
 	blocked[currentV] = true
 
 	for _, n := range (*(jce.graph))[currentV] {
-		if explore[n] == false {
+		if !explore[n] {
 			continue
 		} else if n == startV {
 			// found a cycle
@@ -119,7 +119,7 @@ func (jce *johnsonce) FindCyclesRecur(component *SCC, explore []bool, startV, cu
 			}
 			*cycles = append(*cycles, cycle)
 			*cyclesMap = append(*cyclesMap, cycleBool)
-		} else if blocked[n] == false {
+		} else if !blocked[n] {
 			ret := jce.FindCyclesRecur(component, explore, startV, n, blocked, stack, blockedMap, cycles, cyclesMap, sumArray, sum)
 			foundCycle = foundCycle || ret
 		}
