@@ -25,4 +25,3 @@ TESTS*.xml
 .tox/
 .vagrant/
 .vscode
-*.bak
