@@ -210,7 +210,7 @@ func (e *Endorser) simulateProposal(txParams *ccprovider.TransactionParams, chai
 	// fabricMan: if "transfer", add MergeSign
 	if chaincodeInput.Args != nil {
 		endorserLogger.Infof("chaincodeInput==========================================================>>> %s", string(chaincodeInput.Args[0]))
-		if string(chaincodeInput.Args[0]) == "transfer" {
+		if string(chaincodeInput.Args[0]) == "transferm" {
 			res, _ := rwsetutil.TxRwSetFromProtoMsg(simResult.PubSimulationResults)
 			res.MergeSign = []byte{'1'}
 			if simResult.PubSimulationResults, err = res.ToProtoMsg(); err != nil {

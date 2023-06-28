@@ -68,7 +68,7 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 		if err != nil {
 			logger.Info("err 2")
 		}
-		logger.Info("is transfer:", txRWSet.MergeSign != nil)
+		logger.Info("is transferm:", txRWSet.MergeSign != nil)
 
 		ns := txRWSet.NsRwSets[1]
 		contract = ns.NameSpace
@@ -99,7 +99,6 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 			f := ns.KvRwSet.Reads[fr].GetKey()
 			t := ns.KvRwSet.Reads[to].GetKey()
 			transferSet = append(transferSet, Transfer{tx: msg, from: f, to: t, val: money})
-			logger.Info(transferSet)
 
 			// Add money to moneyMap, version to versionMap
 			verfr := ns.KvRwSet.Reads[fr].GetVersion()
@@ -129,57 +128,61 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 			tid := int32(len(scheduler.pendingTxns))
 
 			for _, write := range ns.KvRwSet.Writes {
-				writeKey := write.GetKey()
-				writeKeys = append(writeKeys, writeKey)
+				if writeKey := write.GetKey(); validKey(writeKey) {
+					writeKeys = append(writeKeys, writeKey)
 
-				// check if the key exists
-				key, ok := scheduler.uniqueKeyMap[writeKey]
+					// check if the key exists
+					key, ok := scheduler.uniqueKeyMap[writeKey]
 
-				if !ok {
-					// if the key is not found, insert and increment
-					// the key counter
-					scheduler.uniqueKeyMap[writeKey] = scheduler.uniqueKeyCounter
-					key = scheduler.uniqueKeyCounter
-					scheduler.uniqueKeyCounter += 1
+					if !ok {
+						// if the key is not found, insert and increment
+						// the key counter
+						scheduler.uniqueKeyMap[writeKey] = scheduler.uniqueKeyCounter
+						key = scheduler.uniqueKeyCounter
+						scheduler.uniqueKeyCounter += 1
+					}
+					// set the respective bit in the writeSet
+
+					index := key / 64
+					writeSet[index] |= (uint64(1) << (key % 64))
 				}
-				// set the respective bit in the writeSet
-
-				index := key / 64
-				writeSet[index] |= (uint64(1) << (key % 64))
 			}
 
 			for _, read := range ns.KvRwSet.Reads {
-				readKey := read.GetKey()
-				readVer := read.GetVersion()
-				readKeys = append(readKeys, readKey)
-				key, ok := scheduler.uniqueKeyMap[readKey]
-				if !ok {
-					// if the key is not found, it is inserted. So increment
-					// the key counter
-					scheduler.uniqueKeyMap[readKey] = scheduler.uniqueKeyCounter
-					key = scheduler.uniqueKeyCounter
-					scheduler.uniqueKeyCounter += 1
-				}
+				if readKey := read.GetKey(); validKey(readKey) {
+					readKeys = append(readKeys, readKey)
+					readVer := read.GetVersion()
+					readKeys = append(readKeys, readKey)
 
-				ver, ok := scheduler.keyVersionMap[key]
-				if ok {
-					if ver.BlockNum == readVer.BlockNum && ver.TxNum == readVer.TxNum {
-						scheduler.keyTxMap[key] = append(scheduler.keyTxMap[key], tid)
-					} else {
-						// It seems to abort the previous txns with for the unmatched version
-						// logger.Infof("Invalidate txn %v", r.keyTxMap[key])
-						for _, tx := range scheduler.keyTxMap[key] {
-							scheduler.invalid[tx] = true
-						}
-						scheduler.keyTxMap[key] = nil
+					key, ok := scheduler.uniqueKeyMap[readKey]
+					if !ok {
+						// if the key is not found, it is inserted. So increment
+						// the key counter
+						scheduler.uniqueKeyMap[readKey] = scheduler.uniqueKeyCounter
+						key = scheduler.uniqueKeyCounter
+						scheduler.uniqueKeyCounter += 1
 					}
-				} else {
-					scheduler.keyTxMap[key] = append(scheduler.keyTxMap[key], tid)
-					scheduler.keyVersionMap[key] = readVer
-				}
 
-				index := key / 64
-				readSet[index] |= (uint64(1) << (key % 64))
+					ver, ok := scheduler.keyVersionMap[key]
+					if ok {
+						if ver.BlockNum == readVer.BlockNum && ver.TxNum == readVer.TxNum {
+							scheduler.keyTxMap[key] = append(scheduler.keyTxMap[key], tid)
+						} else {
+							// It seems to abort the previous txns with for the unmatched version
+							// logger.Infof("Invalidate txn %v", r.keyTxMap[key])
+							for _, tx := range scheduler.keyTxMap[key] {
+								scheduler.invalid[tx] = true
+							}
+							scheduler.keyTxMap[key] = nil
+						}
+					} else {
+						scheduler.keyTxMap[key] = append(scheduler.keyTxMap[key], tid)
+						scheduler.keyVersionMap[key] = readVer
+					}
+
+					index := key / 64
+					readSet[index] |= (uint64(1) << (key % 64))
+				}
 			}
 
 			scheduler.txReadSet[tid] = readSet

@@ -3,6 +3,8 @@
 package scheduler
 
 import (
+	"strings"
+
 	"github.com/hyperledger/fabric/core/ledger/kvledger/txmgmt/rwsetutil"
 )
 
@@ -75,6 +77,11 @@ func (res *resolver) GetSchedule() ([]int32, []bool) {
 	}
 
 	return schedule, invSet
+}
+
+func validKey(key string) bool {
+	// If chaincode is deployed with "--init-required", each txn will read a key ending with "initialized", ignore it for the validation.
+	return !strings.HasSuffix(key, "initialized")
 }
 
 func printTxRWSet(ns *rwsetutil.NsRwSet) {
