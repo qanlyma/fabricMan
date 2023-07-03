@@ -84,6 +84,34 @@ func validKey(key string) bool {
 	return !strings.HasSuffix(key, "initialized")
 }
 
+func FindConnectedComponents(graph, invgraph [][]int32) [][]int32 {
+	n := len(graph)
+	visited := make([]bool, n)
+	components := [][]int32{}
+
+	for i := 0; i < n; i++ {
+		if !visited[i] {
+			component := []int32{}
+			dfs(graph, invgraph, i, visited, &component)
+			components = append(components, component)
+		}
+	}
+
+	return components
+}
+
+func dfs(graph, invgraph [][]int32, vertex int, visited []bool, component *[]int32) {
+	*component = append(*component, int32(vertex))
+	visited[vertex] = true
+	nb := append(graph[vertex], invgraph[vertex]...)
+
+	for _, neighbor := range nb {
+		if !visited[neighbor] {
+			dfs(graph, invgraph, int(neighbor), visited, component)
+		}
+	}
+}
+
 func printTxRWSet(ns *rwsetutil.NsRwSet) {
 	logger.Infof("Contract: %s", ns.NameSpace)
 	for _, read := range ns.KvRwSet.Reads {

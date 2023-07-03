@@ -16,7 +16,7 @@ import (
 var logger = flogging.MustGetLogger("orderer.common.blockcutter.scheduler")
 
 func ScheduleTxn(batch []*cb.Envelope) []*cb.Envelope {
-	logger.Info("============================================================>>> 2.4 ScheduleTxn!!! batch: ", len(batch))
+	logger.Info("============================================================>>> 2.4 ScheduleTxn!!!")
 
 	initStrcut(len(batch))
 	unMarshalAndSort(batch)
@@ -35,12 +35,13 @@ func ScheduleTxn(batch []*cb.Envelope) []*cb.Envelope {
 	}
 
 	// reorder
-	schedule := reorderBatch()
+	schedule, subgraphs := reorderBatch()
 	for i, txnID := range schedule {
 		logger.Info("schedule ordering: ", i, txnID)
 		newbatch = append(newbatch, pendingBatch[txnID])
 	}
-	logger.Info("============================================================>>> 2.4 ScheduleTxn!!! newbatch: ", len(newbatch))
+
+	logger.Info("============================================================>>> newbatch:", len(newbatch), subgraphs)
 	return newbatch
 }
 
@@ -56,9 +57,9 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 	logger.Info("=======================================================>>> Received txRWSet!!!")
 
 	for i, msg := range batch {
-		logger.Infof("|||||||||||||||||| Tx %d:", i+1)
+		logger.Infof("|||||||||||||||||| Tx %d:", i)
 
-		// UnMarshal
+		// unMarshal
 		resppayload, err := utils.GetActionFromEnvelopeMsg(msg)
 		if err != nil {
 			logger.Info("err 1")
@@ -74,12 +75,9 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 		contract = ns.NameSpace
 		printTxRWSet(ns)
 
-		// Sort
+		// sort
 		if txRWSet.MergeSign != nil {
-			// Merge part
-			// Add MergeSign to Envelope (useless for now)
-			// msg.MergeSign = []byte{'1'}
-
+			// merge part
 			var fr, to, money int
 			moneystr, _ := strconv.Atoi(string(ns.KvRwSet.Reads[1].GetValue()))
 			moneyend, _ := strconv.Atoi(string(ns.KvRwSet.Writes[0].GetValue()))
@@ -95,12 +93,12 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 			}
 			logger.Infof("start: %d end: %d fr: %d to %d", moneystr, moneyend, fr, to)
 
-			// Add Tx to list
+			// add Tx to list
 			f := ns.KvRwSet.Reads[fr].GetKey()
 			t := ns.KvRwSet.Reads[to].GetKey()
 			transferSet = append(transferSet, Transfer{tx: msg, from: f, to: t, val: money})
 
-			// Add money to moneyMap, version to versionMap
+			// add money to moneyMap, version to versionMap
 			verfr := ns.KvRwSet.Reads[fr].GetVersion()
 			verto := ns.KvRwSet.Reads[to].GetVersion()
 			moneyfr, _ := strconv.Atoi(string(ns.KvRwSet.Reads[fr].GetValue()))
@@ -115,7 +113,7 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 			}
 
 		} else {
-			// Reorder part
+			// reorder part
 			readKeys := []string{}
 			writeKeys := []string{}
 			defer func(start time.Time) {
@@ -141,8 +139,8 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 						key = scheduler.uniqueKeyCounter
 						scheduler.uniqueKeyCounter += 1
 					}
-					// set the respective bit in the writeSet
 
+					// set the respective bit in the writeSet
 					index := key / 64
 					writeSet[index] |= (uint64(1) << (key % 64))
 				}
@@ -150,7 +148,6 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 
 			for _, read := range ns.KvRwSet.Reads {
 				if readKey := read.GetKey(); validKey(readKey) {
-					readKeys = append(readKeys, readKey)
 					readVer := read.GetVersion()
 					readKeys = append(readKeys, readKey)
 
@@ -189,7 +186,6 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 			scheduler.txWriteSet[tid] = writeSet
 			scheduler.pendingTxns = append(scheduler.pendingTxns, i)
 			pendingBatch[i] = msg
-			logger.Infof("%d: Finish Processing txn %d", i, tid)
 		}
 	}
 	logger.Info("=======================================================>>> End of txRWSet!!!")

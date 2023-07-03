@@ -47,14 +47,14 @@ func NewTxnScheduler(blkSize uint32) TxnScheduler {
 	}
 }
 
-func reorderBatch() []int {
+func reorderBatch() ([]int, [][]int32) {
 	var validCount, invalidCount int
 	defer func(start time.Time) {
 		elapsed := time.Since(start).Nanoseconds() / 1000
 		logger.Infof("Process Blk in %d us ( %d valid txns, %d invalid txns)", elapsed, validCount, invalidCount)
 	}(time.Now())
 	if len(scheduler.pendingTxns) <= 1 {
-		return scheduler.pendingTxns
+		return scheduler.pendingTxns, nil
 	}
 
 	txnCount := len(scheduler.pendingTxns)
@@ -83,16 +83,21 @@ func reorderBatch() []int {
 			}
 		}
 	}
+
+	// find independent connected subgraphs
+	subgraphs := FindConnectedComponents(graph, invgraph)
+
 	elapsedDependency := time.Since(start).Nanoseconds() / 1000
 	logger.Infof("Resolve in-blk txn dependency in %d us", elapsedDependency)
 
 	start = time.Now()
 	resGen := NewResolver(&graph, &invgraph)
 
+	// reorder
 	res, _ := resGen.GetSchedule()
 	lenres := len(res)
 	elapsedSchedule := time.Since(start).Nanoseconds() / 1000
-	logger.Infof("Schedule txns in %d ", elapsedSchedule)
+	logger.Infof("Schedule txns in %d us", elapsedSchedule)
 
 	resGen = nil
 	graph = nil
@@ -111,8 +116,6 @@ func reorderBatch() []int {
 			invalidCount++
 		}
 	}
-	// log some information
-	logger.Infof("schedule len %d -> %v", len(res), res)
-	logger.Infof("Finish processing blk ")
-	return validBatch
+
+	return validBatch, subgraphs
 }
