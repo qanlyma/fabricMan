@@ -7,6 +7,9 @@ SPDX-License-Identifier: Apache-2.0
 package validation
 
 import (
+	"sort"
+	"sync"
+
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/core/ledger/internal/version"
@@ -78,8 +81,8 @@ func (v *validator) preLoadCommittedVersionOfRSet(blk *block) error {
 }
 
 // validateAndPrepareBatch performs validation and prepares the batch for final writes
-func (v *validator) validateAndPrepareBatch(blk *block, doMVCCValidation bool) (*publicAndHashUpdates, error) {
-	logger.Info("===============================================================>>> 3.4 validateAndPrepareBatch!!!")
+func (v *validator) validateAndPrepareBatch(blk *block, doMVCCValidation bool, subgraphs [][]int) (*publicAndHashUpdates, error) {
+	logger.Info("===============================================================>>> 3.4 validateAndPrepareBatch!!!", subgraphs)
 
 	// Check whether statedb implements BulkOptimizable interface. For now,
 	// only CouchDB implements BulkOptimizable to reduce the number of REST
@@ -92,24 +95,61 @@ func (v *validator) validateAndPrepareBatch(blk *block, doMVCCValidation bool) (
 	}
 
 	updates := newPubAndHashUpdates()
-	for _, tx := range blk.txs {
-		var validationCode peer.TxValidationCode
-		var err error
-		if validationCode, err = v.validateEndorserTX(tx.rwset, doMVCCValidation, updates); err != nil {
-			return nil, err
-		}
 
-		tx.validationCode = validationCode
-		if validationCode == peer.TxValidationCode_VALID {
-			logger.Debugf("Block [%d] Transaction index [%d] TxId [%s] marked as valid by state validator. ContainsPostOrderWrites [%t]", blk.num, tx.indexInBlock, tx.id, tx.containsPostOrderWrites)
-			committingTxHeight := version.NewHeight(blk.num, uint64(tx.indexInBlock))
-			if err := updates.applyWriteSet(tx.rwset, committingTxHeight, v.db, tx.containsPostOrderWrites); err != nil {
+	if len(subgraphs) == 0 {
+		for _, tx := range blk.txs {
+			var validationCode peer.TxValidationCode
+			var err error
+			if validationCode, err = v.validateEndorserTX(tx.rwset, doMVCCValidation, updates); err != nil {
 				return nil, err
 			}
-		} else {
-			logger.Warningf("Block [%d] Transaction index [%d] TxId [%s] marked as invalid by state validator. Reason code [%s]",
-				blk.num, tx.indexInBlock, tx.id, validationCode.String())
+
+			tx.validationCode = validationCode
+			if validationCode == peer.TxValidationCode_VALID {
+				logger.Debugf("Block [%d] Transaction index [%d] TxId [%s] marked as valid by state validator. ContainsPostOrderWrites [%t]", blk.num, tx.indexInBlock, tx.id, tx.containsPostOrderWrites)
+				committingTxHeight := version.NewHeight(blk.num, uint64(tx.indexInBlock))
+				if err := updates.applyWriteSet(tx.rwset, committingTxHeight, v.db, tx.containsPostOrderWrites); err != nil {
+					return nil, err
+				}
+			} else {
+				logger.Warningf("Block [%d] Transaction index [%d] TxId [%s] marked as invalid by state validator. Reason code [%s]",
+					blk.num, tx.indexInBlock, tx.id, validationCode.String())
+			}
 		}
+	} else {
+
+		// fabricMan pvalidation
+		txMap := make(map[int]*transaction)
+		for i, tx := range blk.txs {
+			txMap[i] = tx
+		}
+		logger.Info(txMap)
+		wg := sync.WaitGroup{}
+		wg.Add(len(subgraphs))
+		for _, sub := range subgraphs {
+			sort.Ints(sub)
+			go func(sub []int) {
+				for _, id := range sub {
+					logger.Info("pvalidation.........", id)
+					tx := txMap[id]
+					var validationCode peer.TxValidationCode
+
+					validationCode, _ = v.validateEndorserTX(tx.rwset, doMVCCValidation, updates)
+
+					tx.validationCode = validationCode
+					if validationCode == peer.TxValidationCode_VALID {
+						logger.Debugf("Block [%d] Transaction index [%d] TxId [%s] marked as valid by state validator. ContainsPostOrderWrites [%t]", blk.num, tx.indexInBlock, tx.id, tx.containsPostOrderWrites)
+						committingTxHeight := version.NewHeight(blk.num, uint64(tx.indexInBlock))
+						updates.applyWriteSet(tx.rwset, committingTxHeight, v.db, tx.containsPostOrderWrites)
+					} else {
+						logger.Warningf("Block [%d] Transaction index [%d] TxId [%s] marked as invalid by state validator. Reason code [%s]",
+							blk.num, tx.indexInBlock, tx.id, validationCode.String())
+					}
+				}
+				wg.Done()
+			}(sub)
+		}
+		wg.Wait()
 	}
 	return updates, nil
 }
@@ -180,9 +220,9 @@ func (v *validator) validateTx(txRWSet *rwsetutil.TxRwSet, updates *publicAndHas
 	return peer.TxValidationCode_VALID, nil
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/////                 Validation of public read-set
-////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////
+// ///                 Validation of public read-set
+// //////////////////////////////////////////////////////////////////////////////
 func (v *validator) validateReadSet(ns string, kvReads []*kvrwset.KVRead, updates *privacyenabledstate.PubUpdateBatch) (bool, error) {
 	for _, kvRead := range kvReads {
 		if valid, err := v.validateKVRead(ns, kvRead, updates); !valid || err != nil {
@@ -218,9 +258,9 @@ func (v *validator) validateKVRead(ns string, kvRead *kvrwset.KVRead, updates *p
 	return true, nil
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/////                 Validation of range queries
-////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////
+// ///                 Validation of range queries
+// //////////////////////////////////////////////////////////////////////////////
 func (v *validator) validateRangeQueries(ns string, rangeQueriesInfo []*kvrwset.RangeQueryInfo, updates *privacyenabledstate.PubUpdateBatch) (bool, error) {
 	for _, rqi := range rangeQueriesInfo {
 		if valid, err := v.validateRangeQuery(ns, rqi, updates); !valid || err != nil {
@@ -262,9 +302,9 @@ func (v *validator) validateRangeQuery(ns string, rangeQueryInfo *kvrwset.RangeQ
 	return qv.validate()
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/////                 Validation of hashed read-set
-////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////
+// ///                 Validation of hashed read-set
+// //////////////////////////////////////////////////////////////////////////////
 func (v *validator) validateNsHashedReadSets(ns string, collHashedRWSets []*rwsetutil.CollHashedRwSet,
 	updates *privacyenabledstate.HashedUpdateBatch) (bool, error) {
 	for _, collHashedRWSet := range collHashedRWSets {

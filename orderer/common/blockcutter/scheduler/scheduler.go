@@ -3,6 +3,7 @@
 package scheduler
 
 import (
+	"encoding/json"
 	"strconv"
 	"time"
 
@@ -20,12 +21,14 @@ func ScheduleTxn(batch []*cb.Envelope) []*cb.Envelope {
 
 	initStrcut(len(batch))
 	unMarshalAndSort(batch)
+
 	if len(batch) < 2 && len(transferSet) == 0 {
 		return batch
 	}
 
 	newbatch := make([]*cb.Envelope, 0)
 	newSubs := make([][]int, 0)
+	orderMap := make(map[int]int)
 
 	// merge
 	if len(transferSet) > 0 {
@@ -34,13 +37,30 @@ func ScheduleTxn(batch []*cb.Envelope) []*cb.Envelope {
 
 	// reorder
 	schedule, subs := reorderBatch()
-	logger.Info("order:", subs)
+	logger.Info("subs:", subs)
+
+	// build new batch
 	for i, txnID := range schedule {
 		logger.Info("schedule ordering: ", i, txnID)
+		orderMap[txnID] = i
 		newbatch = append(newbatch, pendingBatch[txnID])
 	}
 
 	// pvalidation
+	logger.Info("ordermap: ", orderMap)
+	for i := 0; i < len(subs); i++ {
+		sub := subs[i]
+		temp := make([]int, 0)
+		for j := 0; j < len(sub); j++ {
+			temp = append(temp, orderMap[int(sub[j])])
+		}
+		newSubs = append(newSubs, temp)
+	}
+	subData, err := json.Marshal(newSubs)
+	if err != nil {
+		logger.Info("err")
+	}
+	newbatch[0].Subgraphs = subData
 
 	logger.Info("============================================================>>> newbatch:", newSubs)
 	return newbatch

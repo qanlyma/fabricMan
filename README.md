@@ -46,3 +46,5 @@
 
 1. 在 reorder 的过程中划分连通子图，不在同一个子图内的交易相互独立可以并行验证。
 2. `fabric-protos-go/common/common.pb.go` 在 Envelope 中加入 Subgraphs 表示相关联的交易。
+3. `core/ledger/kvledger/txmgmt/validation/batch_preparer.go` 接受 Subgraphs。
+4. `core/ledger/kvledger/txmgmt/validation/validator.go` 通过 Subgraphs 来并行处理交易。

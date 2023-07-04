@@ -8,6 +8,7 @@ package validation
 
 import (
 	"bytes"
+	"encoding/json"
 
 	"github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset"
@@ -77,10 +78,11 @@ func (p *CommitBatchPreparer) ValidateAndPrepareBatch(blockAndPvtdata *ledger.Bl
 	var txsStatInfo []*TxStatInfo
 	var pubAndHashUpdates *publicAndHashUpdates
 	var pvtUpdates *privacyenabledstate.PvtUpdateBatch
+	var subgraphs [][]int
 	var err error
 
 	logger.Debug("preprocessing ProtoBlock...")
-	if internalBlock, txsStatInfo, err = preprocessProtoBlock(
+	if internalBlock, txsStatInfo, subgraphs, err = preprocessProtoBlock(
 		p.postOrderSimulatorProvider,
 		p.db.ValidateKeyValue,
 		blk,
@@ -90,7 +92,7 @@ func (p *CommitBatchPreparer) ValidateAndPrepareBatch(blockAndPvtdata *ledger.Bl
 		return nil, nil, err
 	}
 
-	if pubAndHashUpdates, err = p.validator.validateAndPrepareBatch(internalBlock, doMVCCValidation); err != nil {
+	if pubAndHashUpdates, err = p.validator.validateAndPrepareBatch(internalBlock, doMVCCValidation, subgraphs); err != nil {
 		return nil, nil, err
 	}
 	logger.Debug("validating rwset...")
@@ -192,9 +194,10 @@ func preprocessProtoBlock(postOrderSimulatorProvider PostOrderSimulatorProvider,
 	validateKVFunc func(key string, value []byte) error,
 	blk *common.Block, doMVCCValidation bool,
 	customTxProcessors map[common.HeaderType]ledger.CustomTxProcessor,
-) (*block, []*TxStatInfo, error) {
+) (*block, []*TxStatInfo, [][]int, error) {
 	b := &block{num: blk.Header.Number}
 	txsStatInfo := []*TxStatInfo{}
+	var subgraphs [][]int // fabricMan
 	// Committer validator has already set validation flags based on well formed tran checks
 	txsFilter := txflags.ValidationFlags(blk.Metadata.Metadata[common.BlockMetadataIndex_TRANSACTIONS_FILTER])
 	for txIndex, envBytes := range blk.Data.Data {
@@ -206,9 +209,9 @@ func preprocessProtoBlock(postOrderSimulatorProvider PostOrderSimulatorProvider,
 		txsStatInfo = append(txsStatInfo, txStatInfo)
 		if env, err = protoutil.GetEnvelopeFromBlock(envBytes); err == nil {
 
-			//fabricMan
+			// fabricMan merge
 			if env.MergeSign != nil && string(env.MergeSign) == "0" {
-				logger.Info("This is a merge Tx. Add to updates.")
+				logger.Infof("Tx %d is a merge Tx. Add to updates.", txIndex)
 				txRWSet := &rwsetutil.TxRwSet{}
 				_ = txRWSet.FromProtoBytes(env.MergePayload)
 				txRWSet.MergeSign = []byte{'0'}
@@ -219,6 +222,14 @@ func preprocessProtoBlock(postOrderSimulatorProvider PostOrderSimulatorProvider,
 					containsPostOrderWrites: false,
 				})
 				continue
+			}
+
+			// fabricMan pvalidation
+			if env.Subgraphs != nil && txIndex == 0 {
+				err := json.Unmarshal(env.Subgraphs, &subgraphs)
+				if err != nil {
+					logger.Info("err when unmarshal json")
+				}
 			}
 
 			if payload, err = protoutil.UnmarshalPayload(env.Payload); err == nil {
@@ -235,7 +246,7 @@ func preprocessProtoBlock(postOrderSimulatorProvider PostOrderSimulatorProvider,
 			continue
 		}
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 
 		var txRWSet *rwsetutil.TxRwSet
@@ -271,11 +282,11 @@ func preprocessProtoBlock(postOrderSimulatorProvider PostOrderSimulatorProvider,
 				continue
 			}
 			if err != nil {
-				return nil, nil, err
+				return nil, nil, nil, err
 			}
 			if rwsetProto != nil {
 				if txRWSet, err = rwsetutil.TxRwSetFromProtoMsg(rwsetProto); err != nil {
-					return nil, nil, err
+					return nil, nil, nil, err
 				}
 			}
 			containsPostOrderWrites = true
@@ -297,7 +308,7 @@ func preprocessProtoBlock(postOrderSimulatorProvider PostOrderSimulatorProvider,
 			})
 		}
 	}
-	return b, txsStatInfo, nil
+	return b, txsStatInfo, subgraphs, nil
 }
 
 func processNonEndorserTx(
