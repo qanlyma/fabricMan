@@ -25,23 +25,24 @@ func ScheduleTxn(batch []*cb.Envelope) []*cb.Envelope {
 	}
 
 	newbatch := make([]*cb.Envelope, 0)
+	newSubs := make([][]int, 0)
 
 	// merge
 	if len(transferSet) > 0 {
 		mergeTransferTxs(batch)
-		for _, v := range transferSet {
-			newbatch = append(newbatch, v.tx)
-		}
 	}
 
 	// reorder
-	schedule, subgraphs := reorderBatch()
+	schedule, subs := reorderBatch()
+	logger.Info("order:", subs)
 	for i, txnID := range schedule {
 		logger.Info("schedule ordering: ", i, txnID)
 		newbatch = append(newbatch, pendingBatch[txnID])
 	}
 
-	logger.Info("============================================================>>> newbatch:", len(newbatch), subgraphs)
+	// pvalidation
+
+	logger.Info("============================================================>>> newbatch:", newSubs)
 	return newbatch
 }
 
@@ -72,13 +73,16 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 		logger.Info("is transferm:", txRWSet.MergeSign != nil)
 
 		ns := txRWSet.NsRwSets[1]
-		contract = ns.NameSpace
 		printTxRWSet(ns)
+		readSet := make([]uint64, maxUniqueKeys/64)
+		writeSet := make([]uint64, maxUniqueKeys/64)
+		tid := int32(len(scheduler.pendingTxns))
 
 		// sort
 		if txRWSet.MergeSign != nil {
 			// merge part
 			var fr, to, money int
+			contract = ns.NameSpace
 			moneystr, _ := strconv.Atoi(string(ns.KvRwSet.Reads[1].GetValue()))
 			moneyend, _ := strconv.Atoi(string(ns.KvRwSet.Writes[0].GetValue()))
 
@@ -120,10 +124,6 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 				elapsed := time.Since(start).Nanoseconds() / 1000
 				logger.Infof("Process txn with read keys %v and write keys %v in %d us", readKeys, writeKeys, elapsed)
 			}(time.Now())
-
-			readSet := make([]uint64, maxUniqueKeys/64)
-			writeSet := make([]uint64, maxUniqueKeys/64)
-			tid := int32(len(scheduler.pendingTxns))
 
 			for _, write := range ns.KvRwSet.Writes {
 				if writeKey := write.GetKey(); validKey(writeKey) {
@@ -181,12 +181,12 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 					readSet[index] |= (uint64(1) << (key % 64))
 				}
 			}
-
-			scheduler.txReadSet[tid] = readSet
-			scheduler.txWriteSet[tid] = writeSet
-			scheduler.pendingTxns = append(scheduler.pendingTxns, i)
-			pendingBatch[i] = msg
 		}
+
+		scheduler.txReadSet[tid] = readSet
+		scheduler.txWriteSet[tid] = writeSet
+		scheduler.pendingTxns = append(scheduler.pendingTxns, i)
+		pendingBatch[i] = msg
 	}
 	logger.Info("=======================================================>>> End of txRWSet!!!")
 }
