@@ -207,11 +207,49 @@ func (e *Endorser) simulateProposal(txParams *ccprovider.TransactionParams, chai
 		return nil, nil, nil, nil, err
 	}
 
-	// fabricMan: if "transfer", add MergeSign
-	if chaincodeInput.Args != nil {
-		endorserLogger.Infof("chaincodeInput==========================================================>>> %s", string(chaincodeInput.Args[0]))
-		if string(chaincodeInput.Args[0]) == "transferm" {
-			res, _ := rwsetutil.TxRwSetFromProtoMsg(simResult.PubSimulationResults)
+	// fabricMan: if the transfer rules are met, add MergeSign
+	if len(chaincodeInput.Args) == 4 {
+		endorserLogger.Infof("chaincodeInput==========================================================>>> %s, %s, %s, %s", string(chaincodeInput.Args[0]), string(chaincodeInput.Args[1]), string(chaincodeInput.Args[2]), string(chaincodeInput.Args[3]))
+		res, _ := rwsetutil.TxRwSetFromProtoMsg(simResult.PubSimulationResults)
+		ns := res.NsRwSets[1]
+		readmap := make(map[string]int)
+		writemap := make(map[string]int)
+		var diff int
+		var merge bool
+		for _, read := range ns.KvRwSet.Reads {
+			// v := "nil"
+			// if read.GetValue() != nil {
+			// 	v = string(read.GetValue())
+			// }
+			// if read.GetVersion() == nil {
+			// 	logger.Infof("Read Key: %s, Version: nil, Value: %s", read.GetKey(), v)
+			// } else {
+			// 	logger.Infof("Read Key: %s, Version: (%d, %d), Value: %s", read.GetKey(), read.GetVersion().GetBlockNum(), read.GetVersion().GetTxNum(), v)
+			// }
+			n, err := strconv.Atoi(string(read.GetValue()))
+			if err == nil {
+				readmap[read.GetKey()] = n
+			}
+		}
+		for _, write := range ns.KvRwSet.Writes {
+			logger.Infof("Write Key: %s, Value: %s", write.GetKey(), string(write.GetValue()))
+			n, err := strconv.Atoi(string(write.GetValue()))
+			if err == nil {
+				writemap[write.GetKey()] = n
+			}
+		}
+		if len(readmap) == 2 {
+			for k, vw := range writemap {
+				merge = true
+				vr, exist := readmap[k]
+				if !exist {
+					merge = false
+					break
+				}
+				diff += vw - vr
+			}
+		}
+		if merge && diff == 0 {
 			res.MergeSign = []byte{'1'}
 			if simResult.PubSimulationResults, err = res.ToProtoMsg(); err != nil {
 				endorserLogger.Info("Failed to add merge sign!")

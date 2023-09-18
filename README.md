@@ -6,11 +6,11 @@
 
 1. `core/ledger/kvledger/txmgmt/rwsetutil/rwset_builder.go` 在 ReadSet 中加入了 Value
 2. `core/ledger/kvledger/txmgmt/rwsetutil/rwset_proto_util.go` 在 TxRwSet 中加入 MergeSign `res.MergeSign = []byte{'1'}`
-3. `fabric-protos-go/common/common.pb.go` 在 Envelope 中加入合并交易的标识 MergeSign（可去掉？） 和 MergePayload（传递合并的读写集）
+3. `vendor/github.com/hyperledger/fabric-protos-go/common/common.pb.go` 在 Envelope 中加入合并交易的标识 MergeSign（可去掉？） 和 MergePayload（传递合并的读写集）
 4. `vendor/github.com/hyperledger/fabric-protos-go/peer/transaction.pb.go` 加入 TxValidationCode 通知被合并的交易
 
 
-5. `core/endorser/endorser.go` 如果第一个参数是 `transferM`，TxRwSet.MergeSign 标记为转账交易
+5. `core/endorser/endorser.go` 如果符合交易规则，TxRwSet.MergeSign 标记为转账交易
 6. `orderer/common/blockcutter/scheduler/scheduler.go` 合并交易（合并的交易 MergeSign 标为 0），并将合并后的读写集传给 peer
 7. `core/ledger/kvledger/txmgmt/validation/batch_preparer.go` 将合并交易读写集加入 internalBlock
 8. `core/ledger/kvledger/txmgmt/validation/validator.go` 只对合并交易的读写集进行 MVCC 验证，并对被合并的交易直接返回相应 TxValidationCode
@@ -45,6 +45,6 @@
 ### 并行验证：
 
 1. 在 reorder 的过程中划分连通子图，不在同一个子图内的交易相互独立可以并行验证。
-2. `fabric-protos-go/common/common.pb.go` 在 Envelope 中加入 Subgraphs 表示相关联的交易。
+2. `vendor/github.com/hyperledger/fabric-protos-go/common/common.pb.go` 在 Envelope 中加入 Subgraphs 表示相关联的交易。
 3. `core/ledger/kvledger/txmgmt/validation/batch_preparer.go` 接受 Subgraphs。
 4. `core/ledger/kvledger/txmgmt/validation/validator.go` 通过 Subgraphs 来并行处理交易。
