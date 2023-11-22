@@ -1,5 +1,7 @@
 # FabricMan
 
+说明：本项目由我独立完成，提交者有两个是因为主要代码在实验室的服务器上，使用了其他同学账号进行提交。
+
 ## 主要修改
 
 ### 交易合并：
@@ -9,13 +11,14 @@
 3. `vendor/github.com/hyperledger/fabric-protos-go/common/common.pb.go` 在 Envelope 中加入合并交易的标识 MergeSign（可去掉？） 和 MergePayload（传递合并的读写集）
 4. `vendor/github.com/hyperledger/fabric-protos-go/peer/transaction.pb.go` 加入 TxValidationCode 通知被合并的交易
 
-
 5. `core/endorser/endorser.go` 如果符合交易规则，TxRwSet.MergeSign 标记为转账交易
 6. `orderer/common/blockcutter/scheduler/scheduler.go` 合并交易（合并的交易 MergeSign 标为 0），并将合并后的读写集传给 peer
 7. `core/ledger/kvledger/txmgmt/validation/batch_preparer.go` 将合并交易读写集加入 internalBlock
 8. `core/ledger/kvledger/txmgmt/validation/validator.go` 只对合并交易的读写集进行 MVCC 验证，并对被合并的交易直接返回相应 TxValidationCode
  
 ### 交易重排：
+
+fabric++ 中的交易重排：
 
 #### tarjanscc.go
 
@@ -41,6 +44,12 @@
 3. `FindCycles()` 方法用于在给定的强连通分量中找到所有的循环。它返回两个矩阵，一个表示顶点是否属于循环，另一个表示每个顶点属于的循环数量。
 4. `FindCyclesRecur()` 方法是递归方法，用于在当前顶点的邻居中查找循环。
 5. `BreakCycles()` 方法用于处理循环。它根据循环的数量和顶点的权重来确定要移除的顶点，然后将其标记为无效。
+
+fabricMan 中的交易重排：
+
+#### reorderSort.go
+
+由于考虑到 fabric++ 中的交易重排在环路多的时候算法时间复杂度过高，此处重新设计了一个简单的交易重排算法。
 
 ### 并行验证：
 

@@ -69,7 +69,7 @@ func ScheduleTxn(batch []*cb.Envelope) []*cb.Envelope {
 func initStrcut(size int) {
 	transferSet = make([]Transfer, 0)
 	moneyMap = make(map[string]int)
-	versionMap = make(map[string]*kvrwset.Version)
+	versionMap = make(map[string]*kvrwset.Version) // for merge
 	pendingBatch = make(map[int]*cb.Envelope)
 	scheduler = NewTxnScheduler(uint32(size))
 }
@@ -97,6 +97,11 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 		readSet := make([]uint64, maxUniqueKeys/64)
 		writeSet := make([]uint64, maxUniqueKeys/64)
 		tid := int32(len(scheduler.pendingTxns))
+
+		// // Filter Txs with old-version-reads
+		// for _, readv := range ns.KvRwSet.Reads {
+		// 	logger.Info("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv", readv.GetVersion())
+		// }
 
 		// sort
 		if txRWSet.MergeSign != nil {

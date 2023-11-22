@@ -191,8 +191,11 @@ func (v *validator) validateTx(txRWSet *rwsetutil.TxRwSet, updates *publicAndHas
 			logger.Infof("Write Key: %s, Value: %s", write.GetKey(), string(write.GetValue()))
 		}
 
-		if txRWSet.MergeSign != nil && string(txRWSet.MergeSign) != "0" {
-			return peer.TxValidationCode_MERGED, nil
+		// if txRWSet.MergeSign != nil && string(txRWSet.MergeSign) != "0" {
+		// 	return peer.TxValidationCode_MERGED, nil
+		// }
+		if txRWSet.MergeSign != nil {
+			return peer.TxValidationCode_VALID, nil
 		}
 
 		// Validate public reads

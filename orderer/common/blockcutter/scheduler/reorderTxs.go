@@ -65,8 +65,8 @@ func reorderBatch() ([]int, [][]int32) {
 		invgraph[i] = make([]int32, 0, txnCount)
 	}
 
+	// build graph
 	// for every transactions, find the intersection between the readSet and the writeSet
-	start := time.Now()
 	for i := int32(0); i < int32(txnCount); i++ {
 		for j := int32(0); j < int32(txnCount); j++ {
 			if i == j || scheduler.invalid[i] || scheduler.invalid[j] {
@@ -84,6 +84,13 @@ func reorderBatch() ([]int, [][]int32) {
 		}
 	}
 
+	// fabricMan reorder
+	start := time.Now()
+	reslut, _ := ReorderSort(graph, invgraph)
+	elapsedSchedule2 := time.Since(start).Nanoseconds() / 1000
+	logger.Info("reorderSort:::::::::::::::::::::::::::::::::::::::::::::::::::::::", reslut)
+	logger.Infof("Schedule2222222 txns in %d us", elapsedSchedule2)
+
 	// find independent connected subgraphs
 	subgraphs := FindConnectedComponents(graph, invgraph)
 
@@ -93,10 +100,11 @@ func reorderBatch() ([]int, [][]int32) {
 	start = time.Now()
 	resGen := NewResolver(&graph, &invgraph)
 
-	// reorder
+	// fabric++ reorder
 	res, _ := resGen.GetSchedule()
 	lenres := len(res)
 	elapsedSchedule := time.Since(start).Nanoseconds() / 1000
+	logger.Info("reorder+++:::::::::::::::::::::::::::::::::::::::::::::::::::::::", res)
 	logger.Infof("Schedule txns in %d us", elapsedSchedule)
 
 	resGen = nil
