@@ -4,6 +4,7 @@ package scheduler
 
 import (
 	"math"
+	"time"
 )
 
 func ReorderSort(graph, invgraph [][]int32) ([]int32, error) {
@@ -11,6 +12,7 @@ func ReorderSort(graph, invgraph [][]int32) ([]int32, error) {
 	outdegree := make(map[int32]int)
 	nodeset := make(map[int32]bool)
 
+	start1 := time.Now()
 	// Calculate in-degrees using invgraph
 	for i := 0; i < len(invgraph); i++ {
 		for node := range invgraph {
@@ -24,10 +26,13 @@ func ReorderSort(graph, invgraph [][]int32) ([]int32, error) {
 			outdegree[int32(node)] = len(graph[int32(node)])
 		}
 	}
+	e1 := time.Since(start1).Nanoseconds() / 1000
+	logger.Info("Algorithm time of 111111:", e1)
 
 	var result []int32
 	var nodeToSort int32
 
+	start2 := time.Now()
 	for len(nodeset) > 0 {
 		// Find the node with min in-dgree
 		minIndegree := math.MaxInt32
@@ -59,13 +64,8 @@ func ReorderSort(graph, invgraph [][]int32) ([]int32, error) {
 		}
 		delete(nodeset, nodeToSort)
 	}
+	e2 := time.Since(start2).Nanoseconds() / 1000
+	logger.Info("Algorithm time of 222222:", e2)
 
-	reverse(result)
 	return result, nil
-}
-
-func reverse(slice []int32) {
-	for i, j := 0, len(slice)-1; i < j; i, j = i+1, j-1 {
-		slice[i], slice[j] = slice[j], slice[i]
-	}
 }

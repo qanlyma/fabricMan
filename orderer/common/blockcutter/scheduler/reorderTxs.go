@@ -84,40 +84,38 @@ func reorderBatch() ([]int, [][]int32) {
 		}
 	}
 
-	// fabricMan reorder
-	start := time.Now()
-	reslut, _ := ReorderSort(graph, invgraph)
-	elapsedSchedule2 := time.Since(start).Nanoseconds() / 1000
-	logger.Info("reorderSort:::::::::::::::::::::::::::::::::::::::::::::::::::::::", reslut)
-	logger.Infof("Schedule2222222 txns in %d us", elapsedSchedule2)
+	logger.Info("graph", graph)
+	logger.Info("invgraph", invgraph)
 
 	// find independent connected subgraphs
 	subgraphs := FindConnectedComponents(graph, invgraph)
 
-	elapsedDependency := time.Since(start).Nanoseconds() / 1000
-	logger.Infof("Resolve in-blk txn dependency in %d us", elapsedDependency)
-
-	start = time.Now()
-	resGen := NewResolver(&graph, &invgraph)
+	// fabricMan reorder
+	start1 := time.Now()
+	res, _ := ReorderSort(graph, invgraph)
+	e1 := time.Since(start1).Nanoseconds() / 1000
+	logger.Info("reorderSort:::::::::::::::::::::::::::::::::::::::::::::::::::::::", res)
+	logger.Info("Algorithm time of FabricMan schedule txns:", e1, "Vaild number:", len(res))
 
 	// fabric++ reorder
-	res, _ := resGen.GetSchedule()
-	lenres := len(res)
-	elapsedSchedule := time.Since(start).Nanoseconds() / 1000
-	logger.Info("reorder+++:::::::::::::::::::::::::::::::::::::::::::::::::::::::", res)
-	logger.Infof("Schedule txns in %d us", elapsedSchedule)
+	// start2 := time.Now()
+	// resGen := NewResolver(&graph, &invgraph)
+	// res, _ := resGen.GetSchedule()
+	// e2 := time.Since(start2).Nanoseconds() / 1000
+	// logger.Info("reorder+++::::::::::::::::::::::::::::::::::::::::::::::::::::::::", res)
+	// logger.Info("Algorithm time of Fabric++ schedule txns:", e2, "Vaild number:", len(res))
 
-	resGen = nil
+	// resGen = nil
 	graph = nil
 	invgraph = nil
 
 	validBatch := make([]int, 0)
 
-	for i := 0; i < lenres; i++ {
-		validBatch = append(validBatch, scheduler.pendingTxns[res[lenres-1-i]])
+	for i := 0; i < len(res); i++ {
+		validBatch = append(validBatch, scheduler.pendingTxns[res[len(res)-1-i]])
 	}
 
-	validCount = lenres
+	validCount = len(res)
 	invalidCount = 0
 	for _, valid := range scheduler.invalid {
 		if valid {

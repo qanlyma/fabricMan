@@ -96,7 +96,7 @@ func (v *validator) validateAndPrepareBatch(blk *block, doMVCCValidation bool, s
 
 	updates := newPubAndHashUpdates()
 
-	if len(subgraphs) == 0 {
+	if len(subgraphs) >= 0 {
 		for _, tx := range blk.txs {
 			var validationCode peer.TxValidationCode
 			var err error

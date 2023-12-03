@@ -143,6 +143,7 @@ func (r *receiver) Cut() []*cb.Envelope {
 
 	// fabricMan
 	batch = scheduler.ScheduleTxn(batch)
+
 	return batch
 }
 

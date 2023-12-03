@@ -5,7 +5,6 @@ package scheduler
 import (
 	"encoding/json"
 	"strconv"
-	"time"
 
 	cb "github.com/hyperledger/fabric-protos-go/common"
 	"github.com/hyperledger/fabric-protos-go/ledger/rwset/kvrwset"
@@ -37,13 +36,17 @@ func ScheduleTxn(batch []*cb.Envelope) []*cb.Envelope {
 
 	// reorder
 	schedule, subs := reorderBatch()
+	logger.Info("schedule:", schedule)
 	logger.Info("subs:", subs)
 
 	// build new batch
 	for i, txnID := range schedule {
-		logger.Info("schedule ordering: ", i, txnID)
 		orderMap[txnID] = i
 		newbatch = append(newbatch, pendingBatch[txnID])
+		delete(pendingBatch, txnID)
+	}
+	for _, invalidTxn := range pendingBatch {
+		newbatch = append(newbatch, invalidTxn)
 	}
 
 	// pvalidation
@@ -98,11 +101,6 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 		writeSet := make([]uint64, maxUniqueKeys/64)
 		tid := int32(len(scheduler.pendingTxns))
 
-		// // Filter Txs with old-version-reads
-		// for _, readv := range ns.KvRwSet.Reads {
-		// 	logger.Info("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv", readv.GetVersion())
-		// }
-
 		// sort
 		if txRWSet.MergeSign != nil {
 			// merge part
@@ -143,16 +141,16 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 
 		} else {
 			// reorder part
-			readKeys := []string{}
-			writeKeys := []string{}
-			defer func(start time.Time) {
-				elapsed := time.Since(start).Nanoseconds() / 1000
-				logger.Infof("Process txn with read keys %v and write keys %v in %d us", readKeys, writeKeys, elapsed)
-			}(time.Now())
+			// readKeys := []string{}
+			// writeKeys := []string{}
+			// defer func(start time.Time) {
+			// 	elapsed := time.Since(start).Nanoseconds() / 1000
+			// 	logger.Infof("Process txn with read keys %v and write keys %v in %d us", readKeys, writeKeys, elapsed)
+			// }(time.Now())
 
 			for _, write := range ns.KvRwSet.Writes {
 				if writeKey := write.GetKey(); validKey(writeKey) {
-					writeKeys = append(writeKeys, writeKey)
+					// writeKeys = append(writeKeys, writeKey)
 
 					// check if the key exists
 					key, ok := scheduler.uniqueKeyMap[writeKey]
@@ -174,7 +172,7 @@ func unMarshalAndSort(batch []*cb.Envelope) {
 			for _, read := range ns.KvRwSet.Reads {
 				if readKey := read.GetKey(); validKey(readKey) {
 					readVer := read.GetVersion()
-					readKeys = append(readKeys, readKey)
+					// readKeys = append(readKeys, readKey)
 
 					key, ok := scheduler.uniqueKeyMap[readKey]
 					if !ok {
